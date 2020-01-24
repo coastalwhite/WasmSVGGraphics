@@ -25,6 +25,9 @@ impl Renderer {
 
         let svg_element = crate::create_element_ns("http://www.w3.org/2000/svg", "svg");
         let defs_element = crate::create_element_ns("http://www.w3.org/2000/svg", "defs");
+
+        Renderer::setViewBox(&svg_element, 0, 0, 60, 60);
+
         svg_element.append_child(&defs_element).expect("Unable to append defs to svg");
         root.append_child(&svg_element).expect("Unable to create svg to root");
 
@@ -32,6 +35,18 @@ impl Renderer {
             dom_root_id: String::from(dom_root_id),
             shape_defs: BTreeSet::new()
         }
+    }
+
+    fn setViewBox(element: &web_sys::Element, x: u32, y: u32, width: u32, height: u32) {
+        element
+            .set_attribute("viewBox", &format!("{} {} {} {}", x, y, width, height)[..])
+            .expect("Couldn't set viewBox of svg element");
+    }
+
+    pub fn clear(&mut self) {
+        self.get_svg_root().set_inner_html("");
+
+        self.shape_defs = BTreeSet::new();
     }
 
     fn get_root(&self) -> web_sys::Element {
