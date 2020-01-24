@@ -30,7 +30,7 @@ impl Figure {
         }
     }
 
-    fn get_hash(&self) -> u64 {
+    pub fn get_hash(&self) -> u64 {
         let mut s = DefaultHasher::new();
         self.hash(&mut s);
         s.finish()
@@ -42,7 +42,7 @@ impl Figure {
         format!("{}-{}", SHAPE_ID_PREFIX, format!("{:x}", hash))
     }
 
-    fn to_def(&self) -> web_sys::Element {
+    pub fn to_def(&self) -> web_sys::Element {
         let id = self.get_id();
 
         let g_element = crate::create_element_ns(crate::SVG_NS, "g");
