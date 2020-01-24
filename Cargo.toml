@@ -18,7 +18,17 @@ geom_2d = "0.1.1"
 version = "0.3.4"
 
 features = [
+    'console',
     'Window',
     'Document',
+    'DocumentFragment',
+    'Node',
     'Element',
+    'HtmlElement',
+    'HtmlSlotElement',
+    'HtmlTemplateElement',
+    'CustomElementRegistry',
+    'ShadowRoot',
+    'ShadowRootInit',
+    'ShadowRootMode',
 ]
