@@ -48,6 +48,12 @@ impl Figure {
         let g_element = crate::create_element_ns(crate::SVG_NS, "g");
         g_element.set_id(&id[..]);
 
+        for shape in self.shapes.iter() {
+            g_element
+                .append_child(&shape.to_styled_element())
+                .expect("Cant append shape to figure");
+        }
+
         g_element
     }
 }

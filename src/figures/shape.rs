@@ -66,7 +66,7 @@ impl Hash for ShapeStyle {
 }
 
 const DEFAULT_STROKE_WIDTH: u32 = 1;
-const DEFAULT_STROKE_COLOR: TransparentableColor = TransparentableColor::Color(color::default::BLACK);
+const DEFAULT_STROKE_COLOR: TransparentableColor = TransparentableColor::RGB(color::default::BLACK);
 const DEFAULT_FILL_COLOR: TransparentableColor = TransparentableColor::Transparent;
 
 use AttributeField::*;

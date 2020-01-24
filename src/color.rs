@@ -17,6 +17,8 @@ impl Color {
     /// # Example
     ///
     /// ```
+    /// use wasm_svg_graphics::color::Color;
+    ///
     /// // 6 character definition
     /// let black_coral = Color::from_hex("565676");
     ///
@@ -59,6 +61,8 @@ impl Color {
     /// # Example
     ///
     /// ```
+    /// use wasm_svg_graphics::color::Color;
+    ///
     /// let pastel_purple = Color::new(172, 159, 187);
     ///
     /// println!("{}", pastel_purple.r()); // 172
@@ -72,6 +76,8 @@ impl Color {
     /// # Example
     ///
     /// ```
+    /// use wasm_svg_graphics::color::Color;
+    ///
     /// let pastel_purple = Color::new(172, 159, 187);
     ///
     /// println!("{}", pastel_purple.red()); // 172
@@ -85,6 +91,8 @@ impl Color {
     /// # Example
     ///
     /// ```
+    /// use wasm_svg_graphics::color::Color;
+    ///
     /// let pastel_purple = Color::new(172, 159, 187);
     ///
     /// println!("{}", pastel_purple.g()); // 159
@@ -98,6 +106,8 @@ impl Color {
     /// # Example
     ///
     /// ```
+    /// use wasm_svg_graphics::color::Color;
+    ///
     /// let pastel_purple = Color::new(172, 159, 187);
     ///
     /// println!("{}", pastel_purple.green()); // 159
@@ -111,6 +121,8 @@ impl Color {
     /// # Example
     ///
     /// ```
+    /// use wasm_svg_graphics::color::Color;
+    ///
     /// let pastel_purple = Color::new(172, 159, 187);
     ///
     /// println!("{}", pastel_purple.b()); // 187
@@ -124,6 +136,8 @@ impl Color {
     /// # Example
     ///
     /// ```
+    /// use wasm_svg_graphics::color::Color;
+    ///
     /// let pastel_purple = Color::new(172, 159, 187);
     ///
     /// println!("{}", pastel_purple.blue()); // 187
@@ -137,9 +151,11 @@ impl Color {
     /// # Example
     ///
     /// ```
+    /// use wasm_svg_graphics::color::Color;
+    ///
     /// let pastel_purple = Color::new(172, 159, 187);
     ///
-    /// println!("{}", pastel_purple.rgb()); // (172, 159, 187)
+    /// println!("{:?}", pastel_purple.rgb()); // (172, 159, 187)
     /// ```
     pub fn rgb(&self) -> (u8, u8, u8) {
         (self.r(), self.g(), self.b())
@@ -150,6 +166,8 @@ impl Color {
     /// # Example
     ///
     /// ```
+    /// use wasm_svg_graphics::color::Color;
+    ///
     /// let pastel_purple = Color::new(172, 159, 187);
     ///
     /// println!("{}", pastel_purple.to_rgb_string()); // rgb(172, 159, 187)
@@ -163,6 +181,8 @@ impl Color {
     /// # Example
     ///
     /// ```
+    /// use wasm_svg_graphics::color::Color;
+    ///
     /// let pastel_purple = Color::new(172, 159, 187);
     ///
     /// println!("{}", pastel_purple.to_hex_string()); // #ac9fbb
@@ -208,7 +228,7 @@ pub mod default {
 }
 
 pub enum TransparentableColor {
-    Color(Color),
+    RGB(Color),
     Transparent,
 }
 
@@ -216,7 +236,7 @@ impl TransparentableColor {
     /// Returns either the hex of 'color' or "transparent" for Color(color) and Transparent, respectively
     pub fn to_string(&self) -> String {
         match self {
-            TransparentableColor::Color(color) => color.to_hex_string(),
+            TransparentableColor::RGB(color) => color.to_hex_string(),
             TransparentableColor::Transparent => String::from("transparent")
         }
     }
@@ -226,7 +246,7 @@ impl PartialEq for TransparentableColor {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (TransparentableColor::Transparent, TransparentableColor::Transparent) => true,
-            (TransparentableColor::Color(color1), TransparentableColor::Color(color2)) => color1 == color2,
+            (TransparentableColor::RGB(color1), TransparentableColor::RGB(color2)) => color1 == color2,
             _ => false
         }
     }
@@ -240,14 +260,14 @@ impl Clone for TransparentableColor {
     fn clone(&self) -> Self {
         match self {
             TransparentableColor::Transparent => TransparentableColor::Transparent,
-            TransparentableColor::Color(color) => TransparentableColor::Color(color.clone())
+            TransparentableColor::RGB(color) => TransparentableColor::RGB(color.clone())
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Color;
+    use crate::color::Color;
     //use super::default;
 
     #[test]
