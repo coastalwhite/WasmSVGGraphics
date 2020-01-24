@@ -87,7 +87,7 @@ impl Renderer {
     }
 
     fn add_use(&self, def_id: &str, location: Point) {
-        let root = self.get_root();
+        let root = self.get_svg_root();
         let use_element = crate::create_element_ns(crate::SVG_NS, "use");
 
         use_element
@@ -115,17 +115,18 @@ impl Renderer {
     /// # Examples
     ///
     /// ```
-    /// use wasm_svg_graphics::figures::Figure;
+    /// use wasm_svg_graphics::figures;
+    /// use geom_2d::point::Point;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = wasm_svg_graphics::renderer::new("svg_id");
+    /// let mut renderer = wasm_svg_graphics::renderer::Renderer::new("svg_id");
     ///
     /// // Generate circle
-    /// let circle = Figure::preset::circle(10);
+    /// let circle = figures::preset::circle(10);
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render(circle, Point::new(20, 20));
+    /// renderer.render(&circle, Point::new(20, 20));
     /// ```
     pub fn render(&mut self, figure: &Figure, location: Point) {
         // If there is already a definition

@@ -248,7 +248,7 @@ impl Clone for TransparentableColor {
 #[cfg(test)]
 mod tests {
     use super::Color;
-    use super::default;
+    //use super::default;
 
     #[test]
     fn test_from_hex() {
