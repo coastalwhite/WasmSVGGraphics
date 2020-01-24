@@ -1,0 +1,24 @@
+[package]
+name = "wasm_svg_graphics"
+version = "0.1.0"
+authors = ["Gijs Burghoorn <g.burghoorn@gmail.com>"]
+edition = "2018"
+description = "A Rust library for rendering SVG Graphics with WASM"
+homepage = "https://github.com/coastalwhite/WasmSVGGraphics"
+repository = "https://github.com/coastalwhite/WasmSVGGraphics.git"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+geom_2d = "0.1.1"
+
+[dependencies.web-sys]
+version = "0.3.4"
+
+features = [
+    'Window',
+    'Document',
+    'Element',
+]
