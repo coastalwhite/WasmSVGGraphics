@@ -125,7 +125,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render(circle, Point::new(20, 20);
+    /// renderer.render(circle, Point::new(20, 20));
     /// ```
     pub fn render(&mut self, figure: &Figure, location: Point) {
         // If there is already a definition
