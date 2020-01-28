@@ -21,8 +21,6 @@ pub struct Figure {
     shapes: Vec<Shape>
 }
 
-const SHAPE_ID_PREFIX: &str = "shape";
-
 impl Figure {
     pub fn new(shapes: Vec<Shape>) -> Figure {
         Figure {
@@ -39,7 +37,7 @@ impl Figure {
     /// Returns the id used for this Figure's definition
     pub fn get_id(&self) -> String {
         let hash = self.get_hash();
-        format!("{}-{}", SHAPE_ID_PREFIX, format!("{:x}", hash))
+        format!("{}-{}", super::SHAPE_ID_PREFIX, format!("{:x}", hash))
     }
 
     pub fn to_def(&self) -> web_sys::Element {
@@ -89,7 +87,7 @@ pub mod preset {
                         PathProps::new(
                             start_point,
                             vec![SubPath::Line(end_point)],
-                        false
+                            false
                         )
                     )
                 )

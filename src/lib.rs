@@ -7,7 +7,8 @@ pub mod figures;
 /// Module containing definition for Color abstraction used and some preset colors
 pub mod color;
 
-
+const NAME_ID_PREFIX: &str = "named";
+const SHAPE_ID_PREFIX: &str = "shape";
 const SVG_NS: &str = "http://www.w3.org/2000/svg";
 
 pub fn get_document() -> web_sys::Document {
