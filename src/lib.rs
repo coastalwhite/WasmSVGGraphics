@@ -1,3 +1,7 @@
+use crate::errors::RendererError;
+use crate::errors::DomError::*;
+use crate::errors::RendererError::*;
+
 /// Module containing the renderer and its logic
 pub mod renderer;
 
@@ -7,23 +11,33 @@ pub mod figures;
 /// Module containing definition for Color abstraction used and some preset colors
 pub mod color;
 
+/// Module containing all the errors
+pub mod errors;
+
 const NAME_ID_PREFIX: &str = "named";
 const SHAPE_ID_PREFIX: &str = "shape";
 const SVG_NS: &str = "http://www.w3.org/2000/svg";
 
-pub fn get_document() -> web_sys::Document {
-    let window = web_sys::window().expect("No window exists");
-    window.document().expect("The windows should contains a document")
+fn get_document() -> Result<web_sys::Document, RendererError> {
+    let window = web_sys::window()
+        .ok_or(Dom(NoWindow))?;
+
+    window.document()
+        .ok_or(Dom(NoDocument))
 }
 
-pub fn create_element(local_name: &str) -> web_sys::Element {
-    get_document()
+/*fn create_element(local_name: &str) -> Result<web_sys::Element, RendererError> {
+    get_document()?
         .create_element(local_name)
-        .expect("Could not create new element")
-}
+        .map_err(|_| Dom(UncreatableElement))
+}*/
 
-pub fn create_element_ns(namespace: &str, name: &str) -> web_sys::Element {
-    get_document()
-        .create_element_ns(Some(namespace), name)
-        .expect("Could not create new namespaced element")
+fn create_element_ns(namespace: &str, name: &str) -> Result<web_sys::Element, RendererError> {
+    get_document()?
+        .create_element_ns
+        (
+            Some(namespace),
+            name
+        )
+        .map_err(|_| Dom(UncreatableNSElement))
 }

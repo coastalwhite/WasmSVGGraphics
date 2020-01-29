@@ -38,7 +38,8 @@ impl PathProps {
     }
 
     pub fn to_element(&self) -> web_sys::Element {
-        let path = crate::create_element_ns(crate::SVG_NS, "path");
+        let path = crate::create_element_ns(crate::SVG_NS, "path")
+            .expect("Failed to create path element!");
         path.set_attribute("d", &self.to_d_string()[..])
             .expect("Cannot attach d to path");
 

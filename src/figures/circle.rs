@@ -12,7 +12,8 @@ impl CircleProps {
     }
 
     pub fn to_element(&self) -> web_sys::Element {
-        let circle = crate::create_element_ns(crate::SVG_NS, "circle");
+        let circle = crate::create_element_ns(crate::SVG_NS, "circle")
+            .expect("Failed to create circle object!");
         circle.set_attribute("r", &self.radius.to_string()[..])
             .expect("Cannot attach r to circle");
         circle.set_attribute("cx", "0")

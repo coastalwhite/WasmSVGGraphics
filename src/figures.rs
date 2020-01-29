@@ -43,7 +43,8 @@ impl Figure {
     pub fn to_def(&self) -> web_sys::Element {
         let id = self.get_id();
 
-        let g_element = crate::create_element_ns(crate::SVG_NS, "g");
+        let g_element = crate::create_element_ns(crate::SVG_NS, "g")
+            .expect("Failed to create defition!");
         g_element.set_id(&id[..]);
 
         for shape in self.shapes.iter() {
