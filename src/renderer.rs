@@ -216,18 +216,13 @@ impl Renderer {
         let container = get_document()?
             .get_element_by_id(
                 &Renderer::get_id_of_named(id_hash)[..]
-            );
+            ).ok_or(Dom(UnfindableId(Renderer::get_id_of_named(id_hash))))?;
 
-        match container {
-            None => Err(Dom(EmptyContainer)),
-            Some(container) => {
-                if container.tag_name() != "g" {
-                    return Err(NamedNotContainer(String::from(name)))
-                }
-
-                Ok(container)
-            }
+        if container.tag_name() != "g" {
+            return Err(NamedNotContainer(String::from(name)))
         }
+
+        Ok(container)
     }
 
     fn add_use_to(&mut self, name: &str, def_id: &str, location: Point) -> Result<(), RendererError> {
@@ -238,6 +233,46 @@ impl Renderer {
             .append_child(&use_element)
             .map_err(|_| Dom(UnappendableElement))
             .map(|_| ())
+    }
+
+    fn adjust_use_to(&mut self, name: &str, def_id: &str, location: Point) -> Result<(), RendererError> {
+        if name == ROOT_NAME {
+            return Err(NamedNotUse(String::from(ROOT_NAME)))
+        }
+
+        let id_hash = self.name_defs.get(name);
+
+        if id_hash == None {
+            return Err(UnfindableName(String::from(name)));
+        }
+
+        let id_hash = id_hash.unwrap();
+
+        let use_element = get_document()?
+            .get_element_by_id(
+                &Renderer::get_id_of_named(id_hash)[..]
+            ).ok_or(Dom(UnfindableId(Renderer::get_id_of_named(id_hash))))?;
+
+        if use_element.tag_name() != "use" {
+            return Err(NamedNotUse(String::from(name)));
+        }
+
+        let value = &format!("#{}", def_id)[..];
+        use_element
+            .set_attribute("href", value)
+            .map_err(|_| Dom(UnsetableAttribute(String::from("href"), String::from(value))))?;
+
+        let value = &format!("{}", location.x())[..];
+        use_element
+            .set_attribute("x", value)
+            .map_err(|_| Dom(UnsetableAttribute(String::from("x"), String::from(value))))?;
+
+        let value = &format!("{}", location.y())[..];
+        use_element
+            .set_attribute("y", value)
+            .map_err(|_| Dom(UnsetableAttribute(String::from("y"), String::from(value))))?;
+
+        Ok(())
     }
 
     /// Render figure at location, this will automatically add a definition
@@ -291,16 +326,13 @@ impl Renderer {
             .expect("Failed to add named use!");
     }
 
-    pub fn clear_named(&self, container_name: &str) {
+    pub fn clear_named_container(&self, container_name: &str) {
         self.get_named_container(container_name)
             .expect("Failed to fetch named container!")
             .set_inner_html("");
     }
 
-    pub fn update_named(&mut self, container_name: &str, figure: &Figure, location: Point) {
-        // Delete all current elements in de container
-        self.clear_named(container_name);
-
+    pub fn update_named(&mut self, name: &str, figure: &Figure, location: Point) {
         // If there is already a definition
         if !self.contains_shape(figure) {
 
@@ -309,9 +341,21 @@ impl Renderer {
                 .expect("Failed to add named definition!");
         }
 
-        // Add element to container
-        self.add_use_to(container_name, &figure.get_id(), location)
-            .expect("Failed to add named use!");
+
+        let container = self.get_named_container(name);
+
+        if !container.is_err() {
+            // Delete all current elements in de container
+            self.clear_named_container(name);
+
+            // Add element to container
+            self.add_use_to(name, &figure.get_id(), location)
+                .expect("Failed to add named use!");
+        } else {
+            // Adjust use element
+            self.adjust_use_to(name, &figure.get_id(), location)
+                .expect("Failed to adjust use element!");
+        }
     }
 
     pub fn hide_named(&self, name: &str) {

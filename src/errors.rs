@@ -73,6 +73,7 @@ pub enum RendererError {
     UnfindableName(String),
     NameAlreadyExists(String),
     NamedNotContainer(String),
+    NamedNotUse(String),
     Dom(DomError)
 }
 
@@ -84,6 +85,7 @@ impl error::Error for RendererError {
             UnfindableName(_) => "The name is unable to be found",
             NameAlreadyExists(_) => "The name is already being used",
             NamedNotContainer(_) => "The name is not being used for a container",
+            NamedNotUse(_) => "The name is not being used for a use element",
             Dom(dom_error) => dom_error.description(),
         }
     }
@@ -101,7 +103,8 @@ impl fmt::Display for RendererError {
             Dom(dom_error) => write!(f, "{}", dom_error),
             UnfindableName(arg0) |
             NameAlreadyExists(arg0) |
-            NamedNotContainer(arg0)
+            NamedNotContainer(arg0) |
+            NamedNotUse(arg0)
             => write!(f, "Error '{}' with argument '{}'", self.description(), arg0),
         }
     }
