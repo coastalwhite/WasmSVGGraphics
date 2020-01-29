@@ -124,7 +124,7 @@ impl Renderer {
         Ok(())
     }
 
-    fn create_use(&self, def_id: &str, location: Point) -> Result<web_sys::Element, RendererError> {
+    fn create_use(&self, def_id: &str, location: &Point) -> Result<web_sys::Element, RendererError> {
         let use_element = crate::create_element_ns(crate::SVG_NS, "use")?;
 
         let value = &format!("#{}", def_id)[..];
@@ -145,7 +145,7 @@ impl Renderer {
         Ok(use_element)
     }
 
-    fn add_use(&self, def_id: &str, location: Point) -> Result<(), RendererError> {
+    fn add_use(&self, def_id: &str, location: &Point) -> Result<(), RendererError> {
         let root = self.get_svg_root()?;
         let use_element = self.create_use(def_id, location)?;
 
@@ -186,7 +186,7 @@ impl Renderer {
         format!("{}-{:x}", NAME_ID_PREFIX, id_hash)
     }
 
-    fn add_named_use(&mut self, name: &str, def_id: &str, location: Point) -> Result<String, RendererError> {
+    fn add_named_use(&mut self, name: &str, def_id: &str, location: &Point) -> Result<String, RendererError> {
         let id_string = self.create_id_string(name)?;
 
         let root = self.get_svg_root()?;
@@ -225,7 +225,7 @@ impl Renderer {
         Ok(container)
     }
 
-    fn add_use_to(&mut self, name: &str, def_id: &str, location: Point) -> Result<(), RendererError> {
+    fn add_use_to(&mut self, name: &str, def_id: &str, location: &Point) -> Result<(), RendererError> {
         let container = self.get_named_container(name)?;
         let use_element = self.create_use(def_id, location)?;
 
@@ -235,7 +235,7 @@ impl Renderer {
             .map(|_| ())
     }
 
-    fn adjust_use_to(&mut self, name: &str, def_id: &str, location: Point) -> Result<(), RendererError> {
+    fn adjust_use_to(&mut self, name: &str, def_id: &str, location: &Point) -> Result<(), RendererError> {
         if name == ROOT_NAME {
             return Err(NamedNotUse(String::from(ROOT_NAME)))
         }
@@ -297,7 +297,7 @@ impl Renderer {
     /// // the renderer will add the shape's definition)
     /// renderer.render(&circle, Point::new(20, 20));
     /// ```
-    pub fn render(&mut self, figure: &Figure, location: Point) {
+    pub fn render(&mut self, figure: &Figure, location: &Point) {
         // If there is already a definition
         if !self.contains_shape(figure) {
 
@@ -312,7 +312,7 @@ impl Renderer {
     }
 
 
-    pub fn render_named(&mut self, name: &str, figure: &Figure, location: Point) {
+    pub fn render_named(&mut self, name: &str, figure: &Figure, location: &Point) {
         // If there is already a definition
         if !self.contains_shape(figure) {
 
@@ -332,7 +332,7 @@ impl Renderer {
             .set_inner_html("");
     }
 
-    pub fn update_named(&mut self, name: &str, figure: &Figure, location: Point) {
+    pub fn update_named(&mut self, name: &str, figure: &Figure, location: &Point) {
         // If there is already a definition
         if !self.contains_shape(figure) {
 
