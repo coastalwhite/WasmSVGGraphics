@@ -26,8 +26,8 @@ impl Shape {
     }
 
     /// !! for internal use
-    pub fn to_styled_element(&self) -> web_sys::Element {
-        let element = self.subshape.to_element();
+    pub fn to_styled_element(&self, translation: Point) -> web_sys::Element {
+        let element = self.subshape.to_element(translation);
 
         self.style.apply_style(&element);
 
@@ -126,6 +126,7 @@ impl ShapeStyle {
 use SubShape::*;
 use crate::figures::path::PathProps;
 use crate::figures::circle::CircleProps;
+use geom_2d::point::Point;
 
 /// Different kind of shapes
 pub enum SubShape {
@@ -143,10 +144,10 @@ impl Hash for SubShape {
 }
 
 impl SubShape {
-    fn to_element(&self) -> web_sys::Element {
+    fn to_element(&self, translation: Point) -> web_sys::Element {
         match self {
-            Path(props) => props.to_element(),
-            Circle(props) => props.to_element(),
+            Path(props) => props.to_element(translation),
+            Circle(props) => props.to_element(translation),
         }
     }
 }

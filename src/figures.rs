@@ -18,8 +18,6 @@ pub mod sub_path;
 use shape::Shape;
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
-use crate::errors::RendererError;
-use crate::errors::DomError::UnsetableAttribute;
 
 /// A combination of shapes into one object used as a svg-def
 #[derive(Hash)]
@@ -28,7 +26,7 @@ pub struct Figure {
 }
 
 impl Figure {
-    fn set_shape_location(location: &Point, element: &web_sys::Element) -> Result<(), RendererError> {
+    /*fn set_shape_location(location: &Point, element: &web_sys::Element) -> Result<(), RendererError> {
         element.set_attribute(
             "x", &location.x().to_string()[..]
         ).map_err(
@@ -52,7 +50,7 @@ impl Figure {
         )?;
 
         Ok(())
-    }
+    }*/
 
     pub fn new(shapes: Vec<(Shape, Point)>) -> Figure {
         Figure {
@@ -81,9 +79,7 @@ impl Figure {
         g_element.set_id(&id[..]);
 
         for (shape, location) in self.shapes.iter() {
-            let styled_element = shape.to_styled_element();
-            Figure::set_shape_location(location, &styled_element)
-                .expect("Failed to set Shape location!");
+            let styled_element = shape.to_styled_element(location.clone());
 
             g_element
                 .append_child(&styled_element)

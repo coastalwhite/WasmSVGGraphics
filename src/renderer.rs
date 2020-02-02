@@ -308,7 +308,13 @@ impl Renderer {
         let svg_element = crate::create_element_ns("http://www.w3.org/2000/svg", "svg")?;
         let defs_element = crate::create_element_ns("http://www.w3.org/2000/svg", "defs")?;
 
-        Renderer::set_view_box(&svg_element, 0, 0, 60, 60)?;
+        Renderer::set_view_box(
+            &svg_element,
+            DEFAULT_VIEWBOX[0],
+            DEFAULT_VIEWBOX[1],
+            DEFAULT_VIEWBOX[2],
+            DEFAULT_VIEWBOX[3]
+        )?;
 
         svg_element.append_child(&defs_element)
             .map_err(|_| Dom(UnappendableElement))?;

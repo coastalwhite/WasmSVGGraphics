@@ -40,10 +40,18 @@ impl SubPath {
     }
 
     /// Returns its contribution to the d attribute
-    pub fn to_string(&self) -> String {
+    pub fn to_d_string(&self, translation: Point) -> String {
         match self {
-            BezierCurve(c1, c2, ep) => SubPath::bezier_curve_string(c1, c2, ep),
-            Line(ep) => SubPath::line_string(ep),
+            BezierCurve(c1, c2, ep) => {
+                let c1 = *c1 + translation;
+                let c2 = *c2 + translation;
+                let ep = *ep + translation;
+                SubPath::bezier_curve_string(&c1, &c2, &ep)
+            },
+            Line(ep) => {
+                let ep = *ep + translation;
+                SubPath::line_string(&ep)
+            },
         }
     }
 }

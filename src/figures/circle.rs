@@ -1,4 +1,5 @@
 use std::hash::{Hash, Hasher};
+use geom_2d::point::Point;
 
 pub struct CircleProps {
     radius: u32
@@ -11,14 +12,15 @@ impl CircleProps {
         }
     }
 
-    pub fn to_element(&self) -> web_sys::Element {
+    pub fn to_element(&self, translation: Point) -> web_sys::Element {
         let circle = crate::create_element_ns(crate::SVG_NS, "circle")
             .expect("Failed to create circle object!");
+
         circle.set_attribute("r", &self.radius.to_string()[..])
             .expect("Cannot attach r to circle");
-        circle.set_attribute("cx", "0")
+        circle.set_attribute("cx", &translation.x().to_string()[..])
             .expect("Cannot attach cx to circle");
-        circle.set_attribute("cy", "0")
+        circle.set_attribute("cy", &translation.y().to_string()[..])
             .expect("Cannot attach cy to circle");
 
         circle

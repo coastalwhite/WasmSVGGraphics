@@ -52,30 +52,43 @@
 //! let style = ShapeStyle::new_from_default();
 //!
 //! // Generate smiley
-//! let smiley = Figure::new(vec!(
-//!     // Head
-//!     (Shape::new(style, SubShape::Circle(CircleProps::new(20))), Point::new(0, 0)),
+//! let style = ShapeStyle::new_from_default();
 //!
-//!     // Left eye
-//!     (Shape::new(style, SubShape::Circle(CircleProps::new(3))), Point::new(5, 5)),
+//! let smiley = Figure::new(vec![
+//!    // Head
+//!    (
+//!        Shape::new(style.clone(), SubShape::Circle(CircleProps::new(20))),
+//!        Point::new(0, 0),
+//!    ),
+//!    // Left eye
+//!    (
+//!        Shape::new(style.clone(), SubShape::Circle(CircleProps::new(3))),
+//!        Point::new(-7, -7),
+//!    ),
+//!    // Right eye
+//!    (
+//!        Shape::new(style.clone(), SubShape::Circle(CircleProps::new(3))),
+//!        Point::new(7, -7),
+//!    ),
+//!    // Mouth
+//!    (
+//!        Shape::new(
+//!            style.clone(),
+//!            SubShape::Path(PathProps::new(
+//!                Point::new(-7, 0), // Beginning point
+//!                vec![SubPath::new_bezier_curve(
+//!                    // Create a new curve
+//!                    Point::new(-4, 5), // Control point 1
+//!                    Point::new(4, 5),  // Control point 2
+//!                    Point::new(7, 0),  // Ending point
+//!                )],
+//!                false, // Is path closed?
+//!             )),
+//!        ),
+//!        Point::new(0, 5),
+//!    ),
+//! ]);
 //!
-//!     // Right eye
-//!     (Shape::new(style, SubShape::Circle(CircleProps::new(3))), Point::new(15, 5)),
-//!
-//!     // Mouth
-//!     (Shape::new(style, SubShape::Path(PathProps::new(
-//!         Point::new(0, 0), // Beginning point
-//!         vec!(SubPath::new_bezier_curve( // Create a new curve
-//!             Point::new(10, 20), // Control point 1
-//!             Point::new(10, 20), // Control point 2
-//!             Point::new(15, 15)  // Ending point
-//!         )),
-//!         false // Is path closed?
-//!     ))), Point::new(5, 15)),
-//! ));
-//!
-//! // Render smiley (since it's the first time of rendering this shape,
-//! // the renderer will add the shape's definition)
 //! renderer.render(&smiley, &Point::new(25, 25));
 //! ```
 //!
@@ -125,31 +138,40 @@
 //! );
 //!
 //! // Generate smiley
-//! let smiley = Figure::new(vec!(
-//!     // Head
-//!     (Shape::new(yellow_stroke, SubShape::Circle(CircleProps::new(20))), Point::new(0, 0)),
-//!
-//!     // Left eye
-//!     (Shape::new(black_fill, SubShape::Circle(CircleProps::new(3))), Point::new(5, 5)),
-//!
-//!     // Right eye
-//!     (Shape::new(black_fill, SubShape::Circle(CircleProps::new(3))), Point::new(15, 5)),
-//!
-//!     // Mouth
-//!     (Shape::new(red_stroke, SubShape::Path(PathProps::new(
-//!         Point::new(0, 0), // Beginning point
-//!         vec!(SubPath::new_bezier_curve( // Create a new curve
-//!             Point::new(10, 20), // Control point 1
-//!             Point::new(10, 20), // Control point 2
-//!             Point::new(15, 15)  // Ending point
-//!         )),
-//!         false // Is path closed?
-//!     ))), Point::new(5, 15)),
-//! ));
-//!
-//! // Render smiley (since it's the first time of rendering this shape,
-//! // the renderer will add the shape's definition)
-//! renderer.render(&smiley, &Point::new(25, 25));
+//! let smiley = Figure::new(vec![
+//!    // Head
+//!    (
+//!        Shape::new(yellow_stroke.clone(), SubShape::Circle(CircleProps::new(20))),
+//!        Point::new(0, 0),
+//!    ),
+//!    // Left eye
+//!    (
+//!        Shape::new(black_fill.clone(), SubShape::Circle(CircleProps::new(3))),
+//!        Point::new(-7, -7),
+//!    ),
+//!    // Right eye
+//!    (
+//!        Shape::new(black_fill.clone(), SubShape::Circle(CircleProps::new(3))),
+//!        Point::new(7, -7),
+//!    ),
+//!    // Mouth
+//!    (
+//!        Shape::new(
+//!            red_stroke.clone(),
+//!            SubShape::Path(PathProps::new(
+//!                Point::new(-7, 0), // Beginning point
+//!                vec![SubPath::new_bezier_curve(
+//!                    // Create a new curve
+//!                    Point::new(-4, 5), // Control point 1
+//!                    Point::new(4, 5),  // Control point 2
+//!                    Point::new(7, 0),  // Ending point
+//!                )],
+//!                false, // Is path closed?
+//!             )),
+//!        ),
+//!        Point::new(0, 5),
+//!    ),
+//! ]);
 //! ```
 
 use crate::errors::RendererError;

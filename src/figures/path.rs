@@ -23,11 +23,13 @@ impl PathProps {
         }
     }
 
-    fn to_d_string(&self) -> String {
-        let mut d_string = format!("M {} {}", self.start_point.x(), self.start_point.y());
+    fn to_d_string(&self, translation: Point) -> String {
+        let translated_start_point = self.start_point + translation;
+
+        let mut d_string = format!("M {} {}", translated_start_point.x(), translated_start_point.y());
 
         for sub_path in self.sub_paths.iter() {
-            d_string.push_str(&format!(" {}", sub_path.to_string())[..]);
+            d_string.push_str(&format!(" {}", sub_path.to_d_string(translation))[..]);
         }
 
         if self.closed {
@@ -37,10 +39,10 @@ impl PathProps {
         d_string
     }
 
-    pub fn to_element(&self) -> web_sys::Element {
+    pub fn to_element(&self, translation: Point) -> web_sys::Element {
         let path = crate::create_element_ns(crate::SVG_NS, "path")
             .expect("Failed to create path element!");
-        path.set_attribute("d", &self.to_d_string()[..])
+        path.set_attribute("d", &self.to_d_string(translation)[..])
             .expect("Cannot attach d to path");
 
         path
