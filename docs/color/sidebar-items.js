@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["TransparentableColor",""]],"mod":[["default",""]],"struct":[["Color","Represents colors within the WASM SVG GRAPHICS lib"]]});

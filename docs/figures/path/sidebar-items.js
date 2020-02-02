@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["PathProps","Structure to represent a SVG Path tag"]]});

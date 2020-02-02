@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Figure",""],["FigureStyle",""],["Shape",""]],"trait":[["Figureable",""]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["AttributeField","Styling attributes"],["SubShape","Different kind of shapes"]],"struct":[["Shape","Shape used by Figure"],["ShapeStyle","Style of shape"]]});
