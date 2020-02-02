@@ -3,6 +3,7 @@ use crate::color;
 use std::hash::{Hash, Hasher};
 use crate::figures::shape::AttributeField::StrokeWidth;
 
+/// Shape used by Figure
 pub struct Shape {
     style: ShapeStyle,
     subshape: SubShape
@@ -16,6 +17,7 @@ impl Hash for Shape {
 }
 
 impl Shape {
+    /// Create new shape
     pub fn new(style: ShapeStyle, subshape: SubShape) -> Shape {
         Shape {
             style,
@@ -23,6 +25,7 @@ impl Shape {
         }
     }
 
+    /// !! for internal use
     pub fn to_styled_element(&self) -> web_sys::Element {
         let element = self.subshape.to_element();
 
@@ -32,7 +35,8 @@ impl Shape {
     }
 }
 
-#[derive(Hash, PartialEq)]
+/// Styling attributes
+#[derive(Clone, Hash, PartialEq)]
 pub enum AttributeField {
     StrokeWidth,
     StrokeColor,
@@ -55,6 +59,8 @@ impl AttributeField {
     }
 }
 
+/// Style of shape
+#[derive(Clone)]
 pub struct ShapeStyle {
     attributes: Vec<(AttributeField, String)>
 }
@@ -73,6 +79,7 @@ use AttributeField::*;
 use crate::figures::shape::SubShape::Path;
 
 impl ShapeStyle {
+    /// Default style (black stroke, 1 stroke width, transparent fill)
     pub fn new_from_default() -> ShapeStyle {
         ShapeStyle {
             attributes: vec![
@@ -83,12 +90,14 @@ impl ShapeStyle {
         }
     }
 
+    /// Empty style
     pub fn new() -> ShapeStyle {
         ShapeStyle {
             attributes: vec![]
         }
     }
 
+    /// Adds/Adjusts a style attribute
     pub fn add_style(&mut self, attribute: AttributeField, value: String) {
         let duplicate = self.attributes
             .iter_mut()
@@ -103,6 +112,7 @@ impl ShapeStyle {
         }
     }
 
+    /// !! Internal use
     pub fn apply_style(&self, element: &web_sys::Element) {
         self.attributes
             .iter()
@@ -117,6 +127,7 @@ use SubShape::*;
 use crate::figures::path::PathProps;
 use crate::figures::circle::CircleProps;
 
+/// Different kind of shapes
 pub enum SubShape {
     Path(PathProps),
     Circle(CircleProps)

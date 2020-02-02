@@ -1,3 +1,5 @@
+//! Module containing the color object, and all it's logic
+
 /// Represents colors within the WASM SVG GRAPHICS lib
 #[derive(Debug)]
 pub struct Color {
