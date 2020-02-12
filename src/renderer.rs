@@ -456,7 +456,7 @@ impl Renderer {
         }
 
         // Add use of definition
-        self.add_use(&Renderer::get_id_of_named(&figure_id)[..], location)
+        self.add_use(&Renderer::get_id_of_figure(&figure_id)[..], location)
             .expect("Failed to add use from id!");
     }
 
