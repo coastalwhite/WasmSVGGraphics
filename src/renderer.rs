@@ -460,8 +460,47 @@ impl Renderer {
             .expect("Failed to add use from id!");
     }
 
+    /// Render named figure from a previously added definition at a location (this will automatically add a definition when needed)
+    ///
+    /// # Arguments
+    /// * `name` - Name to use for later reference
+    /// * `figure_id` - 8 byte hash of the figure used when adding to the dom
+    /// * `location` - the location where to add the `figure`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use wasm_svg_graphics::figures;
+    /// use geom_2d::point::Point;
+    /// use wasm_svg_graphics::renderer::Renderer;
+    ///
+    /// // Declare renderer (must be mutable)
+    /// let mut renderer = Renderer::new("svg_parent_id")
+    ///     .expect("Failed to create renderer!");
+    ///
+    /// // Generate circle
+    /// let circle = figures::preset::circle(10);
+    ///
+    /// let circle_id = renderer.define_render(&circle);
+    ///
+    /// // Render circle
+    /// renderer.render_id(circle_id, &Point::new(20, 20));
+    /// ```
+    pub fn render_named_id(&mut self, name: &str,  figure_id: u64, location: &Point) {
+        // If there is already a definition
+        if !self.contains_id(figure_id) {
 
-    /// Render figure from a previously added definition at a location (this will automatically add a definition when needed)
+            // Add the definition to the dom and hashes
+            panic!("Definition doesn't exist");
+        }
+
+        // Add use of definition
+        self.add_named_use(name, &Renderer::get_id_of_figure(figure_id)[..], location)
+            .expect("Failed to add named use from id!");
+    }
+
+
+    /// Define a figure and return it's hash, this hash can later be used for rendering
     ///
     /// # Arguments
     /// * `figure` - [Figure](../figures/struct.Figure.html) object, used when adding to the dom
@@ -654,6 +693,65 @@ impl Renderer {
         }
     }
 
+    /// Updates a named container or figure to either contain the passed figure or become the passed figure from the id, respectively.
+    ///
+    /// # Arguments
+    /// * `name` - The name of either a named container or a named figure
+    /// * `figure_id` - [Figure](../figures/struct.Figure.html) object, used when adding to the dom
+    /// * `location` - the location where to add the `figure`
+    ///
+    /// # Examples
+    /// ```
+    /// use wasm_svg_graphics::figures;
+    /// use geom_2d::point::Point;
+    /// use wasm_svg_graphics::renderer::Renderer;
+    ///
+    /// // Declare renderer (must be mutable)
+    /// let mut renderer = Renderer::new("svg_parent_id")
+    ///     .expect("Failed to create renderer!");
+    ///
+    /// // Generate circle
+    /// let circle = figures::preset::circle(10);
+    ///
+    /// // Adds the named container 'named_container' to the svg root
+    /// renderer.create_named_container("named_container", "root");
+    ///
+    /// // Render circle (since it's the first time of rendering this shape,
+    /// // the renderer will add the shape's definition)
+    /// renderer.append_to_container("named_container", &circle, &Point::new(10, 10));
+    ///
+    /// // Now the container contains the circle figure
+    ///
+    /// // --snip
+    ///
+    /// // Update the contents of the named container
+    /// renderer.update_named("named_container", &circle, &Point::new(20, 20));
+    ///
+    /// // Now the container contains the circle at a different position
+    /// ```
+    pub fn update_named_with_id(&mut self, name: &str, figure_id: u64, location: &Point) {
+        // If there is already a definition
+        if !self.contains_id(figure_id) {
+            panic!("No definition found!");
+        }
+
+
+        let container = self.get_named_container(name);
+
+        if !container.is_err() {
+            // Delete all current elements in de container
+            self.clear_named_container(name);
+
+            // Add element to container
+            self.add_use_to(name, &Renderer::get_id_of_figure(figure_id)[..], location)
+                .expect("Failed to add named use!");
+        } else {
+            // Adjust use element
+            self.adjust_use_to(name, &Renderer::get_id_of_figure(figure_id)[..], location)
+                .expect("Failed to adjust use element!");
+        }
+    }
+
     /// Hides a named item in the DOM, this can be undone by the [show_named](#method.show_named) method.
     ///
     /// # Arguments
@@ -767,6 +865,48 @@ impl Renderer {
         }
 
         self.add_use_to(name, &figure.get_id()[..], &location)
+            .expect("Failed to add figure to container!")
+    }
+
+    /// Appends a figure from id to a named container
+    ///
+    /// # Arguments
+    /// * `name` - The name of either a named container
+    /// * `figure_id` - [Figure](../figures/struct.Figure.html) object, used when adding to the dom
+    /// * `location` - the location where to add the `figure`
+    ///
+    /// # Panics
+    /// Will panic when a name passed in is in use by a pure figure.
+    ///
+    /// # Examples
+    /// ```
+    /// use wasm_svg_graphics::figures;
+    /// use geom_2d::point::Point;
+    /// use wasm_svg_graphics::renderer::Renderer;
+    ///
+    /// // Declare renderer (must be mutable)
+    /// let mut renderer = Renderer::new("svg_parent_id")
+    ///     .expect("Failed to create renderer!");
+    ///
+    /// // Generate circle
+    /// let circle = figures::preset::circle(10);
+    ///
+    /// // Adds the named container 'named_container' to the svg root
+    /// renderer.create_named_container("named_container", "root");
+    ///
+    /// // Render circle (since it's the first time of rendering this shape,
+    /// // the renderer will add the shape's definition)
+    /// renderer.append_to_container("named_container", &circle, &Point::new(10, 10));
+    ///
+    /// // Now the container contains the circle figure
+    /// ```
+    pub fn append_to_container_with_id(&mut self, name: &str, figure_id: u64, location: &Point) {
+        // If there is already a definition
+        if !self.contains_id(figure_id) {
+            panic!("Definition not found!")
+        }
+
+        self.add_use_to(name, &Renderer::get_id_of_figure(figure_id)[..], &location)
             .expect("Failed to add figure to container!")
     }
 
