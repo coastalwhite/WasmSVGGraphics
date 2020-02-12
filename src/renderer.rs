@@ -28,7 +28,7 @@ pub struct Renderer {
     dom_root_id: String,
 
     /// All the already defined SVG definitions
-    shape_defs: BTreeSet<u64>,
+    figure_defs: BTreeSet<u64>,
 
     /// All the names in use
     name_defs: HashMap<String, u64>
@@ -84,10 +84,13 @@ impl Renderer {
     }
 
     /// Returns whether the renderer already has a definition for the shape
-    fn contains_shape(&self, shape: &Figure) -> bool {
-        let hash = shape.get_hash();
+    fn contains_figure(&self, figure: &Figure) -> bool {
+        self.contains_id(figure.get_hash())
+    }
 
-        self.shape_defs.contains(&hash)
+    /// Returns whether the renderer already has a definition for the shape
+    fn contains_id(&self, figure_id: u64) -> bool {
+        self.figure_defs.contains(&figure_id)
     }
 
     /// Adds a def to the binary tree
@@ -97,7 +100,7 @@ impl Renderer {
             .map_err(|_| Dom(UnappendableElement))?;
 
         let hash = shape.get_hash();
-        self.shape_defs.insert(hash);
+        self.figure_defs.insert(hash);
 
         Ok(())
     }
@@ -323,7 +326,7 @@ impl Renderer {
 
         Ok(Renderer {
             dom_root_id: String::from(dom_root_id),
-            shape_defs: BTreeSet::new(),
+            figure_defs: BTreeSet::new(),
             name_defs: HashMap::new()
         })
     }
@@ -354,7 +357,7 @@ impl Renderer {
     /// ```
     pub fn render(&mut self, figure: &Figure, location: &Point) {
         // If there is already a definition
-        if !self.contains_shape(figure) {
+        if !self.contains_figure(figure) {
 
             // Add the definition to the dom and hashes
             self.add_def(figure)
@@ -403,7 +406,7 @@ impl Renderer {
     /// ```
     pub fn render_named(&mut self, name: &str, figure: &Figure, location: &Point) {
         // If there is already a definition
-        if !self.contains_shape(figure) {
+        if !self.contains_figure(figure) {
 
             // Add the definition to the dom and hashes
             self.add_def(figure)
@@ -414,6 +417,82 @@ impl Renderer {
         self.add_named_use(name, &figure.get_id()[..], location)
             .expect("Failed to add named use!");
     }
+
+    /// Render figure from a previously added definition at a location (this will automatically add a definition when needed)
+    ///
+    /// # Arguments
+    /// * `figure_id` - 8 byte hash of the figure used when adding to the dom
+    /// * `location` - the location where to add the `figure`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use wasm_svg_graphics::figures;
+    /// use geom_2d::point::Point;
+    /// use wasm_svg_graphics::renderer::Renderer;
+    ///
+    /// // Declare renderer (must be mutable)
+    /// let mut renderer = Renderer::new("svg_parent_id")
+    ///     .expect("Failed to create renderer!");
+    ///
+    /// // Generate circle
+    /// let circle = figures::preset::circle(10);
+    ///
+    /// let circle_id = renderer.define_render(&circle);
+    ///
+    /// // Render circle
+    /// renderer.render_id(circle_id, &Point::new(20, 20));
+    /// ```
+    pub fn render_id(&mut self, figure_id: u64, location: &Point) {
+        // If there is already a definition
+        if !self.contains_id(figure_id) {
+
+            // Add the definition to the dom and hashes
+            panic!("Definition doesn't exist");
+        }
+
+        // Add use of definition
+        self.add_use(&Renderer::get_id_of_named(&figure_id)[..], location)
+            .expect("Failed to add use from id!");
+    }
+
+
+    /// Render figure from a previously added definition at a location (this will automatically add a definition when needed)
+    ///
+    /// # Arguments
+    /// * `figure` - [Figure](../figures/struct.Figure.html) object, used when adding to the dom
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use wasm_svg_graphics::figures;
+    /// use geom_2d::point::Point;
+    /// use wasm_svg_graphics::renderer::Renderer;
+    ///
+    /// // Declare renderer (must be mutable)
+    /// let mut renderer = Renderer::new("svg_parent_id")
+    ///     .expect("Failed to create renderer!");
+    ///
+    /// // Generate circle
+    /// let circle = figures::preset::circle(10);
+    ///
+    /// // Define the render
+    /// let circle_id = renderer.define_render(&circle);
+    ///
+    /// // Render circle
+    /// renderer.render_id(circle_id, &Point::new(20, 20));
+    /// ```
+    pub fn define_render(&mut self, figure: &Figure) -> u64 {
+        // If there is already a definition
+        if self.contains_figure(figure) {
+            // Add the definition to the dom and hashes
+            self.add_def(figure)
+                .expect("Failed to add definition!");
+        }
+
+        figure.get_hash()
+    }
+
 
     /// Clears all elements within the SVG element and clears all internal definitions.
     /// Basically reinits the renderer.
@@ -450,7 +529,7 @@ impl Renderer {
             .expect("Can't find SVG Root")
             .set_inner_html("");
 
-        self.shape_defs = BTreeSet::new();
+        self.figure_defs = BTreeSet::new();
         self.name_defs = HashMap::new();
     }
 
@@ -547,7 +626,7 @@ impl Renderer {
     /// ```
     pub fn update_named(&mut self, name: &str, figure: &Figure, location: &Point) {
         // If there is already a definition
-        if !self.contains_shape(figure) {
+        if !self.contains_figure(figure) {
 
             // Add the definition to the dom and hashes
             self.add_def(figure)
@@ -676,7 +755,7 @@ impl Renderer {
     /// ```
     pub fn append_to_container(&mut self, name: &str, figure: &Figure, location: &Point) {
         // If there is already a definition
-        if !self.contains_shape(figure) {
+        if !self.contains_figure(figure) {
 
             // Add the definition to the dom and hashes
             self.add_def(figure)

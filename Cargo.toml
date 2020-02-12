@@ -1,6 +1,6 @@
 [package]
 name = "wasm_svg_graphics"
-version = "0.2.3"
+version = "0.3.0-dev1"
 authors = ["Gijs Burghoorn <g.burghoorn@gmail.com>"]
 edition = "2018"
 description = "A Rust library for rendering SVG Graphics with WASM"
@@ -10,7 +10,7 @@ license = "MIT"
 
 keywords = ["web", "wasm", "svg", "rendering", "render"]
 
-categories = ["raphics", "rendering", "wasm"]
+categories = ["graphics", "rendering", "wasm"]
 
 readme = "./README.md"
 
