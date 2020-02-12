@@ -160,6 +160,10 @@ impl Renderer {
         format!("{}-{:x}", NAME_ID_PREFIX, id_hash)
     }
 
+    fn get_id_of_figure(id_hash: u64) -> String {
+        format!("{}-{}", super::SHAPE_ID_PREFIX, format!("{:x}", id_hash))
+    }
+
     /// Will retrieve the web_sys element of a named container
     fn get_named_container(&self, name: &str) -> Result<web_sys::Element, RendererError> {
         if name == ROOT_NAME {

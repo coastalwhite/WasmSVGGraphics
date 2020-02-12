@@ -191,7 +191,7 @@ pub mod color;
 pub mod errors;
 
 const NAME_ID_PREFIX: &str = "named";
-const SHAPE_ID_PREFIX: &str = "shape";
+const SHAPE_ID_PREFIX: &str = "figure";
 const SVG_NS: &str = "http://www.w3.org/2000/svg";
 
 fn get_document() -> Result<web_sys::Document, RendererError> {
