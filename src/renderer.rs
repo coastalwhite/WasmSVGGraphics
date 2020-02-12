@@ -94,12 +94,12 @@ impl Renderer {
     }
 
     /// Adds a def to the binary tree
-    fn add_def(&mut self, shape: &Figure) -> Result<(), RendererError> {
+    fn add_def(&mut self, figure: &Figure) -> Result<(), RendererError> {
         self.get_defs_root()?
-            .append_child(&shape.to_def())
+            .append_child(&figure.to_def())
             .map_err(|_| Dom(UnappendableElement))?;
 
-        let hash = shape.get_hash();
+        let hash = figure.get_hash();
         self.figure_defs.insert(hash);
 
         Ok(())
@@ -484,7 +484,7 @@ impl Renderer {
     /// ```
     pub fn define_render(&mut self, figure: &Figure) -> u64 {
         // If there is already a definition
-        if self.contains_figure(figure) {
+        if !self.contains_figure(figure) {
             // Add the definition to the dom and hashes
             self.add_def(figure)
                 .expect("Failed to add definition!");
