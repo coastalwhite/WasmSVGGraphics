@@ -1053,6 +1053,21 @@ impl Renderer {
             .expect("Failed to append named container to parent!");
     }
 
+    pub fn move_named(&mut self, name: &str, loc: Point) {
+        if !self.does_name_exist(name) {
+            panic!("Name doesn't exist");
+        }
+
+        let element = super::get_document()
+            .expect("Document failed")
+            .get_element_by_id(
+                &Renderer::get_id_of_named(self.name_defs.get(name).unwrap())[..]
+            ).unwrap();
+
+        element.set_attribute("x", &format!("{}", loc.x())[..]).unwrap();
+        element.set_attribute("y", &format!("{}", loc.y())[..]).unwrap();
+    }
+
     /// Will return whether a given name is used for a named container, instead of a pure figure
     ///
     /// # Arguments
