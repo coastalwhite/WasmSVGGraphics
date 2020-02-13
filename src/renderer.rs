@@ -1,10 +1,10 @@
+use crate::figures::Figure;
+use crate::{get_document, NAME_ID_PREFIX};
+use geom_2d::point::Point;
+use std::collections::hash_map::DefaultHasher;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
-use crate::figures::Figure;
-use geom_2d::point::Point;
-use crate::{get_document, NAME_ID_PREFIX};
 use std::hash::{Hash, Hasher};
-use std::collections::hash_map::DefaultHasher;
 
 use crate::errors::DomError::*;
 use crate::errors::RendererError;
@@ -31,17 +31,26 @@ pub struct Renderer {
     figure_defs: BTreeSet<u64>,
 
     /// All the names in use
-    name_defs: HashMap<String, u64>
+    name_defs: HashMap<String, u64>,
 }
 
 impl Renderer {
     /// sets the viewbox
-    fn set_view_box(element: &web_sys::Element, x: i32, y: i32, width: i32, height: i32) -> Result<(), RendererError> {
+    fn set_view_box(
+        element: &web_sys::Element,
+        x: i32,
+        y: i32,
+        width: i32,
+        height: i32,
+    ) -> Result<(), RendererError> {
         let value = &format!("{} {} {} {}", x, y, width, height)[..];
 
-        element
-            .set_attribute("viewBox", value)
-            .map_err(|_| Dom(UnsetableAttribute(String::from("viewBox"), String::from(value))))
+        element.set_attribute("viewBox", value).map_err(|_| {
+            Dom(UnsetableAttribute(
+                String::from("viewBox"),
+                String::from(value),
+            ))
+        })
     }
 
     /// Will return the parent of the svg
@@ -55,12 +64,13 @@ impl Renderer {
 
     /// Will return the svg root
     fn get_svg_root(&self) -> Result<web_sys::Element, RendererError> {
-        let root = self.get_root()?
+        let root = self
+            .get_root()?
             .first_element_child()
             .ok_or(Dom(EmptyContainer))?;
 
         if root.tag_name() != "svg" {
-            return Err(Dom(UnfindableTag(String::from("svg"))))
+            return Err(Dom(UnfindableTag(String::from("svg"))));
         }
 
         Ok(root)
@@ -68,14 +78,13 @@ impl Renderer {
 
     /// Will return the defs element
     fn get_defs_root(&self) -> Result<web_sys::Element, RendererError> {
-        let defs = self.get_svg_root()?
-            .first_element_child();
+        let defs = self.get_svg_root()?.first_element_child();
 
         match defs {
             None => Err(Dom(EmptyContainer)),
             Some(root) => {
                 if root.tag_name() != "defs" {
-                    return Err(Dom(UnfindableTag(String::from("defs"))))
+                    return Err(Dom(UnfindableTag(String::from("defs"))));
                 }
 
                 Ok(root)
@@ -106,13 +115,16 @@ impl Renderer {
     }
 
     /// Creates a use element from a def_id and location
-    fn create_use(&self, def_id: &str, location: &Point) -> Result<web_sys::Element, RendererError> {
+    fn create_use(&self, def_id: &str, location: Point) -> Result<web_sys::Element, RendererError> {
         let use_element = crate::create_element_ns(crate::SVG_NS, "use")?;
 
         let value = &format!("#{}", def_id)[..];
-        use_element
-            .set_attribute("href", value)
-            .map_err(|_| Dom(UnsetableAttribute(String::from("href"), String::from(value))))?;
+        use_element.set_attribute("href", value).map_err(|_| {
+            Dom(UnsetableAttribute(
+                String::from("href"),
+                String::from(value),
+            ))
+        })?;
 
         let value = &format!("{}", location.x())[..];
         use_element
@@ -143,8 +155,7 @@ impl Renderer {
 
         let id_string = Renderer::get_id_of_named(&id_hash);
 
-        let element = get_document()?
-            .get_element_by_id(&id_string[..]);
+        let element = get_document()?.get_element_by_id(&id_string[..]);
         match element {
             Some(_) => Err(Dom(IdAlreadyExists(id_string))),
             None => {
@@ -179,45 +190,52 @@ impl Renderer {
         let id_hash = id_hash.unwrap();
 
         let container = get_document()?
-            .get_element_by_id(
-                &Renderer::get_id_of_named(id_hash)[..]
-            ).ok_or(Dom(UnfindableId(Renderer::get_id_of_named(id_hash))))?;
+            .get_element_by_id(&Renderer::get_id_of_named(id_hash)[..])
+            .ok_or(Dom(UnfindableId(Renderer::get_id_of_named(id_hash))))?;
 
         if container.tag_name() != "g" {
-            return Err(NamedNotContainer(String::from(name)))
+            return Err(NamedNotContainer(String::from(name)));
         }
 
         Ok(container)
     }
 
     /// Will add a use element to the root svg
-    fn add_use(&self, def_id: &str, location: &Point) -> Result<(), RendererError> {
+    fn add_use(&self, def_id: &str, location: Point) -> Result<(), RendererError> {
         let root = self.get_svg_root()?;
         let use_element = self.create_use(def_id, location)?;
 
-        root
-            .append_child(&use_element)
+        root.append_child(&use_element)
             .map_err(|_| Dom(UnappendableElement))
             .map(|_| ())
     }
 
     /// Will add a use element to the root svg with a name
-    fn add_named_use(&mut self, name: &str, def_id: &str, location: &Point) -> Result<String, RendererError> {
+    fn add_named_use(
+        &mut self,
+        name: &str,
+        def_id: &str,
+        location: Point,
+    ) -> Result<String, RendererError> {
         let id_string = self.create_id_string(name)?;
 
         let root = self.get_svg_root()?;
         let use_element = self.create_use(def_id, location)?;
         use_element.set_id(&id_string[..]);
 
-        root
-            .append_child(&use_element)
+        root.append_child(&use_element)
             .map_err(|_| Dom(UnappendableElement))?;
 
         Ok(id_string)
     }
 
     /// Will add a use element to a named container
-    fn add_use_to(&mut self, name: &str, def_id: &str, location: &Point) -> Result<(), RendererError> {
+    fn add_use_to(
+        &mut self,
+        name: &str,
+        def_id: &str,
+        location: Point,
+    ) -> Result<(), RendererError> {
         let container = self.get_named_container(name)?;
         let use_element = self.create_use(def_id, location)?;
 
@@ -228,9 +246,14 @@ impl Renderer {
     }
 
     /// Adjust a named use to another figure
-    fn adjust_use_to(&mut self, name: &str, def_id: &str, location: &Point) -> Result<(), RendererError> {
+    fn adjust_use_to(
+        &mut self,
+        name: &str,
+        def_id: &str,
+        location: Point,
+    ) -> Result<(), RendererError> {
         if name == ROOT_NAME {
-            return Err(NamedNotUse(String::from(ROOT_NAME)))
+            return Err(NamedNotUse(String::from(ROOT_NAME)));
         }
 
         let id_hash = self.name_defs.get(name);
@@ -242,18 +265,20 @@ impl Renderer {
         let id_hash = id_hash.unwrap();
 
         let use_element = get_document()?
-            .get_element_by_id(
-                &Renderer::get_id_of_named(id_hash)[..]
-            ).ok_or(Dom(UnfindableId(Renderer::get_id_of_named(id_hash))))?;
+            .get_element_by_id(&Renderer::get_id_of_named(id_hash)[..])
+            .ok_or(Dom(UnfindableId(Renderer::get_id_of_named(id_hash))))?;
 
         if use_element.tag_name() != "use" {
             return Err(NamedNotUse(String::from(name)));
         }
 
         let value = &format!("#{}", def_id)[..];
-        use_element
-            .set_attribute("href", value)
-            .map_err(|_| Dom(UnsetableAttribute(String::from("href"), String::from(value))))?;
+        use_element.set_attribute("href", value).map_err(|_| {
+            Dom(UnsetableAttribute(
+                String::from("href"),
+                String::from(value),
+            ))
+        })?;
 
         let value = &format!("{}", location.x())[..];
         use_element
@@ -271,7 +296,7 @@ impl Renderer {
     /// Deletes a use element
     fn delete_use(&mut self, name: &str) -> Result<(), RendererError> {
         if name == ROOT_NAME {
-            return Err(NamedNotUse(String::from(ROOT_NAME)))
+            return Err(NamedNotUse(String::from(ROOT_NAME)));
         }
 
         let id_hash = self.name_defs.get(name);
@@ -283,19 +308,17 @@ impl Renderer {
         let id_hash = id_hash.unwrap();
 
         let use_element = get_document()?
-            .get_element_by_id(
-                &Renderer::get_id_of_named(id_hash)[..]
-            ).ok_or(Dom(UnfindableId(Renderer::get_id_of_named(id_hash))))?;
+            .get_element_by_id(&Renderer::get_id_of_named(id_hash)[..])
+            .ok_or(Dom(UnfindableId(Renderer::get_id_of_named(id_hash))))?;
 
         if use_element.tag_name() != "use" {
             return Err(NamedNotUse(String::from(name)));
         }
 
-        let parent = use_element
-            .parent_element()
-            .ok_or(Dom(NoParent))?;
+        let parent = use_element.parent_element().ok_or(Dom(NoParent))?;
 
-        parent.remove_child(&use_element)
+        parent
+            .remove_child(&use_element)
             .map_err(|_| Dom(UnremoveableChild))?;
 
         Ok(())
@@ -320,10 +343,11 @@ impl Renderer {
             DEFAULT_VIEWBOX[0],
             DEFAULT_VIEWBOX[1],
             DEFAULT_VIEWBOX[2],
-            DEFAULT_VIEWBOX[3]
+            DEFAULT_VIEWBOX[3],
         )?;
 
-        svg_element.append_child(&defs_element)
+        svg_element
+            .append_child(&defs_element)
             .map_err(|_| Dom(UnappendableElement))?;
         root.append_child(&svg_element)
             .map_err(|_| Dom(UnappendableElement))?;
@@ -331,7 +355,7 @@ impl Renderer {
         Ok(Renderer {
             dom_root_id: String::from(dom_root_id),
             figure_defs: BTreeSet::new(),
-            name_defs: HashMap::new()
+            name_defs: HashMap::new(),
         })
     }
 
@@ -359,13 +383,11 @@ impl Renderer {
     /// // the renderer will add the shape's definition)
     /// renderer.render(&circle, &Point::new(20, 20));
     /// ```
-    pub fn render(&mut self, figure: &Figure, location: &Point) {
+    pub fn render(&mut self, figure: &Figure, location: Point) {
         // If there is already a definition
         if !self.contains_figure(figure) {
-
             // Add the definition to the dom and hashes
-            self.add_def(figure)
-                .expect("Failed to add definition!");
+            self.add_def(figure).expect("Failed to add definition!");
         }
 
         // Add use of definition
@@ -406,15 +428,13 @@ impl Renderer {
     /// // --snip
     ///
     /// // Updates the named figure's location to (20,20)
-    /// renderer.update_named("named_circle", &circle, &Point::new(20, 20));
+    /// renderer.move_named("named_circle", Point::new(20, 20));
     /// ```
-    pub fn render_named(&mut self, name: &str, figure: &Figure, location: &Point) {
+    pub fn render_named(&mut self, name: &str, figure: &Figure, location: Point) {
         // If there is already a definition
         if !self.contains_figure(figure) {
-
             // Add the definition to the dom and hashes
-            self.add_def(figure)
-                .expect("Failed to add definition!");
+            self.add_def(figure).expect("Failed to add definition!");
         }
 
         // Add named use of definition
@@ -445,12 +465,11 @@ impl Renderer {
     /// let circle_id = renderer.define_render(&circle);
     ///
     /// // Render circle
-    /// renderer.render_id(circle_id, &Point::new(20, 20));
+    /// renderer.render_id(circle_id, Point::new(20, 20));
     /// ```
-    pub fn render_id(&mut self, figure_id: u64, location: &Point) {
+    pub fn render_id(&mut self, figure_id: u64, location: Point) {
         // If there is already a definition
         if !self.contains_id(figure_id) {
-
             // Add the definition to the dom and hashes
             panic!("Definition doesn't exist");
         }
@@ -484,12 +503,16 @@ impl Renderer {
     /// let circle_id = renderer.define_render(&circle);
     ///
     /// // Render circle
-    /// renderer.render_id(circle_id, &Point::new(20, 20));
+    /// renderer.render_named_id("named_circle", circle_id, Point::new(20, 20));
+    ///
+    /// // --snip
+    ///
+    /// // Updates the Circle's location
+    /// renderer.move_named("named_circle", Point::new(25, 25));
     /// ```
-    pub fn render_named_id(&mut self, name: &str,  figure_id: u64, location: &Point) {
+    pub fn render_named_id(&mut self, name: &str, figure_id: u64, location: Point) {
         // If there is already a definition
         if !self.contains_id(figure_id) {
-
             // Add the definition to the dom and hashes
             panic!("Definition doesn't exist");
         }
@@ -498,7 +521,6 @@ impl Renderer {
         self.add_named_use(name, &Renderer::get_id_of_figure(figure_id)[..], location)
             .expect("Failed to add named use from id!");
     }
-
 
     /// Define a figure and return it's hash, this hash can later be used for rendering
     ///
@@ -523,19 +545,17 @@ impl Renderer {
     /// let circle_id = renderer.define_render(&circle);
     ///
     /// // Render circle
-    /// renderer.render_id(circle_id, &Point::new(20, 20));
+    /// renderer.render_id(circle_id, Point::new(20, 20));
     /// ```
     pub fn define_render(&mut self, figure: &Figure) -> u64 {
         // If there is already a definition
         if !self.contains_figure(figure) {
             // Add the definition to the dom and hashes
-            self.add_def(figure)
-                .expect("Failed to add definition!");
+            self.add_def(figure).expect("Failed to add definition!");
         }
 
         figure.get_hash()
     }
-
 
     /// Clears all elements within the SVG element and clears all internal definitions.
     /// Basically reinits the renderer.
@@ -555,7 +575,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, &Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
     ///
     /// // --snip
     ///
@@ -565,7 +585,7 @@ impl Renderer {
     /// // Renders the circle with "named_circle" name again.
     /// // This would normally panic, since a name is redeclared,
     /// // but since the renderer is cleared, it will not. :)
-    /// renderer.render_named("named_circle", &circle, &Point::new(20, 20));
+    /// renderer.render_named("named_circle", &circle, Point::new(20, 20));
     /// ```
     pub fn clear(&mut self) {
         self.get_svg_root()
@@ -588,6 +608,7 @@ impl Renderer {
     ///
     /// # Note
     /// Most of the time the [update_named](#method.update_named) method is a better alternative.
+    /// Also have a look at [hide_named](#method.hide_named) and [move_named](#method.move_named)
     ///
     /// # Examples
     /// ```
@@ -607,7 +628,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", &circle, &Point::new(10, 10));
+    /// renderer.append_to_container("named_container", &circle, Point::new(10, 10));
     ///
     /// // Now the container contains the circle figure
     ///
@@ -621,7 +642,7 @@ impl Renderer {
     /// // Render circle in the named_container.
     /// // Since definitions were not cleared, it will use a previous definition.
     /// // This saves some processing time in this case.
-    /// renderer.append_to_container("named_container", &circle, &Point::new(20, 20));
+    /// renderer.append_to_container("named_container", &circle, Point::new(20, 20));
     ///
     /// // Now the container contains the circle at a different position
     /// ```
@@ -656,26 +677,24 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", &circle, &Point::new(10, 10));
+    /// renderer.append_to_container("named_container", &circle, Point::new(10, 10));
     ///
     /// // Now the container contains the circle figure
     ///
     /// // --snip
     ///
     /// // Update the contents of the named container
-    /// renderer.update_named("named_container", &circle, &Point::new(20, 20));
+    /// renderer.update_named("named_container", &circle, Point::new(20, 20));
     ///
     /// // Now the container contains the circle at a different position
     /// ```
-    pub fn update_named(&mut self, name: &str, figure: &Figure, location: &Point) {
+    pub fn update_named(&mut self, name: &str, figure: &Figure, location: Point) {
         // If there is already a definition
         if !self.contains_figure(figure) {
-
             // Add the definition to the dom and hashes
             self.add_def(figure)
                 .expect("Failed to add named definition!");
         }
-
 
         let container = self.get_named_container(name);
 
@@ -693,11 +712,13 @@ impl Renderer {
         }
     }
 
-    /// Updates a named container or figure to either contain the passed figure or become the passed figure from the id, respectively.
+    /// Updates a named container or figure to either contain the passed figure
+    /// or become the passed figure from the id, respectively.
     ///
     /// # Arguments
     /// * `name` - The name of either a named container or a named figure
-    /// * `figure_id` - [Figure](../figures/struct.Figure.html) object, used when adding to the dom
+    /// * `figure_id` - id of Figure definition used when adding to the dom,
+    /// defined using [define_render](#method.define_render)
     /// * `location` - the location where to add the `figure`
     ///
     /// # Examples
@@ -716,25 +737,26 @@ impl Renderer {
     /// // Adds the named container 'named_container' to the svg root
     /// renderer.create_named_container("named_container", "root");
     ///
+    /// let circle_id = renderer.define_render(&circle);
+    ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", &circle, &Point::new(10, 10));
+    /// renderer.append_to_container("named_container", &circle, Point::new(10, 10));
     ///
     /// // Now the container contains the circle figure
     ///
     /// // --snip
     ///
     /// // Update the contents of the named container
-    /// renderer.update_named("named_container", &circle, &Point::new(20, 20));
+    /// renderer.update_named_with_id("named_container", circle_id, Point::new(20, 20));
     ///
     /// // Now the container contains the circle at a different position
     /// ```
-    pub fn update_named_with_id(&mut self, name: &str, figure_id: u64, location: &Point) {
+    pub fn update_named_with_id(&mut self, name: &str, figure_id: u64, location: Point) {
         // If there is already a definition
         if !self.contains_id(figure_id) {
             panic!("No definition found!");
         }
-
 
         let container = self.get_named_container(name);
 
@@ -772,7 +794,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, &Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
     ///
     /// // --snip
     ///
@@ -806,7 +828,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, &Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
     ///
     /// // Hides the named figure
     /// renderer.hide_named("named_circle");
@@ -851,20 +873,19 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", &circle, &Point::new(10, 10));
+    /// renderer.append_to_container("named_container", &circle, Point::new(10, 10));
     ///
     /// // Now the container contains the circle figure
     /// ```
-    pub fn append_to_container(&mut self, name: &str, figure: &Figure, location: &Point) {
+    pub fn append_to_container(&mut self, name: &str, figure: &Figure, location: Point) {
         // If there is already a definition
         if !self.contains_figure(figure) {
-
             // Add the definition to the dom and hashes
             self.add_def(figure)
                 .expect("Failed to add named definition!");
         }
 
-        self.add_use_to(name, &figure.get_id()[..], &location)
+        self.add_use_to(name, &figure.get_id()[..], location)
             .expect("Failed to add figure to container!")
     }
 
@@ -872,7 +893,8 @@ impl Renderer {
     ///
     /// # Arguments
     /// * `name` - The name of either a named container
-    /// * `figure_id` - [Figure](../figures/struct.Figure.html) object, used when adding to the dom
+    /// * `figure_id` - id of Figure definition used when adding to the dom,
+    /// defined using [define_render](#method.define_render)
     /// * `location` - the location where to add the `figure`
     ///
     /// # Panics
@@ -894,19 +916,21 @@ impl Renderer {
     /// // Adds the named container 'named_container' to the svg root
     /// renderer.create_named_container("named_container", "root");
     ///
+    /// let circle_id = renderer.define_render(&circle);
+    ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", &circle, &Point::new(10, 10));
+    /// renderer.append_to_container_with_id("named_container", &circle, Point::new(10, 10));
     ///
     /// // Now the container contains the circle figure
     /// ```
-    pub fn append_to_container_with_id(&mut self, name: &str, figure_id: u64, location: &Point) {
+    pub fn append_to_container_with_id(&mut self, name: &str, figure_id: u64, location: Point) {
         // If there is already a definition
         if !self.contains_id(figure_id) {
             panic!("Definition not found!")
         }
 
-        self.add_use_to(name, &Renderer::get_id_of_figure(figure_id)[..], &location)
+        self.add_use_to(name, &Renderer::get_id_of_figure(figure_id)[..], location)
             .expect("Failed to add figure to container!")
     }
 
@@ -931,7 +955,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, &Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
     ///
     /// // --snip
     ///
@@ -941,7 +965,7 @@ impl Renderer {
     /// // Renders the circle with "named_circle" name again.
     /// // This would normally panic, since a name is redeclared,
     /// // but since the named figure is deleted, it will not. :)
-    /// renderer.render_named("named_circle", &circle, &Point::new(20, 20));
+    /// renderer.render_named("named_circle", &circle, Point::new(20, 20));
     /// ```
     pub fn delete_named(&mut self, name: &str) {
         let container = self.get_named_container(name);
@@ -949,11 +973,13 @@ impl Renderer {
         if !container.is_err() {
             let container = container.unwrap();
 
-            let parent = container.parent_element()
+            let parent = container
+                .parent_element()
                 .ok_or(NoParent)
                 .expect("No parent was found!");
 
-            parent.remove_child(&container)
+            parent
+                .remove_child(&container)
                 .map_err(|_| Dom(UnremoveableChild))
                 .expect("Failed to remove child!");
         } else {
@@ -988,7 +1014,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, &Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
     ///
     /// // Will be set to true
     /// let does_named_circle_exist = renderer.does_name_exist("named_circle");
@@ -1002,7 +1028,7 @@ impl Renderer {
     /// // Renders the circle with "named_circle" name again.
     /// // This would normally panic, since a name is redeclared,
     /// // but since the named figure is deleted, it will not. :)
-    /// renderer.render_named("named_circle", &circle, &Point::new(20, 20));
+    /// renderer.render_named("named_circle", &circle, Point::new(20, 20));
     ///
     /// // Will be set to true
     /// let does_named_circle_exist = renderer.does_name_exist("named_circle");
@@ -1035,37 +1061,74 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", &circle, &Point::new(10, 10));
+    /// renderer.append_to_container("named_container", &circle, Point::new(10, 10));
     /// ```
     pub fn create_named_container(&mut self, name: &str, parent: &str) {
-        let parent = self.get_named_container(parent)
+        let parent = self
+            .get_named_container(parent)
             .expect("Failed to fetch named container!");
 
-        let id_string = self.create_id_string(name)
+        let id_string = self
+            .create_id_string(name)
             .expect("Unable to create id string");
 
         let container = crate::create_element_ns("http://www.w3.org/2000/svg", "g")
             .expect("Failed to create new named container!");
         container.set_id(&id_string[..]);
 
-        parent.append_child(&container)
+        parent
+            .append_child(&container)
             .map_err(|_| Dom(UnappendableElement))
             .expect("Failed to append named container to parent!");
     }
 
+    /// Moves a named figure to a given location
+    ///
+    /// # Arguments
+    /// * `name` - Name of the named figure to move
+    /// * `loc` - Location to move the figure to
+    ///
+    /// # Examples
+    /// ```
+    /// use wasm_svg_graphics::figures;
+    /// use geom_2d::point::Point;
+    /// use wasm_svg_graphics::renderer::Renderer;
+    ///
+    /// // Declare renderer (must be mutable)
+    /// let mut renderer = Renderer::new("svg_parent_id")
+    ///     .expect("Failed to create renderer!");
+    ///
+    /// // Generate circle
+    /// let circle = figures::preset::circle(10);
+    ///
+    /// // Render circle (since it's the first time of rendering this shape,
+    /// // the renderer will add the shape's definition)
+    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
+    ///
+    /// // --snip
+    ///
+    /// // Moves the named figure to a new location
+    /// renderer.move_named("named_circle", Point::new(5, 5));
     pub fn move_named(&mut self, name: &str, loc: Point) {
         if !self.does_name_exist(name) {
-            panic!("Name doesn't exist");
+            panic!("Failed to move named figure: Name doesn't exist!");
+        }
+
+        if self.is_container(name) {
+            panic!("Failed to move named figure: Name is used for a container!")
         }
 
         let element = super::get_document()
             .expect("Document failed")
-            .get_element_by_id(
-                &Renderer::get_id_of_named(self.name_defs.get(name).unwrap())[..]
-            ).unwrap();
+            .get_element_by_id(&Renderer::get_id_of_named(self.name_defs.get(name).unwrap())[..])
+            .unwrap();
 
-        element.set_attribute("x", &format!("{}", loc.x())[..]).unwrap();
-        element.set_attribute("y", &format!("{}", loc.y())[..]).unwrap();
+        element
+            .set_attribute("x", &format!("{}", loc.x())[..])
+            .unwrap();
+        element
+            .set_attribute("y", &format!("{}", loc.y())[..])
+            .unwrap();
     }
 
     /// Will return whether a given name is used for a named container, instead of a pure figure
@@ -1091,7 +1154,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, &Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
     ///
     /// // Create a named container
     /// renderer.create_named_container("named_container", "root");
@@ -1130,13 +1193,14 @@ impl Renderer {
     /// ```
     pub fn adjust_viewbox(&self, x: i32, y: i32, width: i32, height: i32) {
         Renderer::set_view_box(
-            &self.get_svg_root()
+            &self
+                .get_svg_root()
                 .expect("Failed to retrieve SVG container!"),
             x,
             y,
             width,
-            height
-        ).expect("Failed to set viewBox!");
+            height,
+        )
+        .expect("Failed to set viewBox!");
     }
 }
-

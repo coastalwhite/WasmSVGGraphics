@@ -30,7 +30,7 @@
 //!
 //! // Render circle (since it's the first time of rendering this shape,
 //! // the renderer will add the shape's definition)
-//! renderer.render(&circle, &Point::new(20, 20));
+//! renderer.render(&circle, Point::new(20, 20));
 //! ```
 //!
 //! As one can see, it's not that difficult render a circle to the svg
@@ -89,7 +89,7 @@
 //!    ),
 //! ]);
 //!
-//! renderer.render(&smiley, &Point::new(25, 25));
+//! renderer.render(&smiley, Point::new(25, 25));
 //! ```
 //!
 //! Declaring custom figures is maybe somewhat of a cumbersome tasks but most definitely worth it!
@@ -172,10 +172,12 @@
 //!        Point::new(0, 5),
 //!    ),
 //! ]);
+//!
+//! renderer.render(&smiley, Point::new(25, 25));
 //! ```
 
-use crate::errors::RendererError;
 use crate::errors::DomError::*;
+use crate::errors::RendererError;
 use crate::errors::RendererError::*;
 
 /// Container for the actual renderer object, this includes all logic for adding items to the DOM and for detecting duplication
@@ -195,19 +197,13 @@ const SHAPE_ID_PREFIX: &str = "figure";
 const SVG_NS: &str = "http://www.w3.org/2000/svg";
 
 fn get_document() -> Result<web_sys::Document, RendererError> {
-    let window = web_sys::window()
-        .ok_or(Dom(NoWindow))?;
+    let window = web_sys::window().ok_or(Dom(NoWindow))?;
 
-    window.document()
-        .ok_or(Dom(NoDocument))
+    window.document().ok_or(Dom(NoDocument))
 }
 
 fn create_element_ns(namespace: &str, name: &str) -> Result<web_sys::Element, RendererError> {
     get_document()?
-        .create_element_ns
-        (
-            Some(namespace),
-            name
-        )
+        .create_element_ns(Some(namespace), name)
         .map_err(|_| Dom(UncreatableNSElement))
 }
