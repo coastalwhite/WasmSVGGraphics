@@ -15,7 +15,7 @@ categories = ["graphics", "rendering", "wasm"]
 readme = "./README.md"
 
 [dependencies]
-svg_definitions = {git = "https://github.com/coastalwhite/svg_definitions.git"}
+svg_definitions = "0.1.0"
 
 [dependencies.web-sys]
 version = "0.3.4"
