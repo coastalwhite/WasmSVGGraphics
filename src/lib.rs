@@ -204,6 +204,8 @@ fn create_element_ns(namespace: &str, name: &str) -> Result<web_sys::Element, Re
         .map_err(|_| Dom(UncreatableNSElement))
 }
 
+type Point2D = (f64, f64);
+
 fn to_html(svg_elem: &SVGElem) -> web_sys::Element {
     let elem = create_element_ns(SVG_NS, &svg_elem.get_tag_name().to_string()[..])
         .expect("Failed to create element");

@@ -15,7 +15,6 @@ categories = ["graphics", "rendering", "wasm"]
 readme = "./README.md"
 
 [dependencies]
-geom_2d = {git = "https://github.com/coastalwhite/Geom2D.git", version="0.2.0"}
 svg_definitions = {git = "https://github.com/coastalwhite/svg_definitions.git", version="0.2.0"}
 
 [dependencies.web-sys]

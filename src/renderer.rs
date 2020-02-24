@@ -1,10 +1,11 @@
 use crate::{get_document, NAME_ID_PREFIX};
-use geom_2d::point::Point;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use svg_definitions::prelude::*;
+
+use crate::Point2D;
 
 use crate::errors::DomError::*;
 use crate::errors::RendererError;
@@ -136,11 +137,15 @@ impl Renderer {
     }
 
     /// Creates a use element from a def_id and location
-    fn create_use(&self, def_id: &str, location: Point) -> Result<web_sys::Element, RendererError> {
+    fn create_use(
+        &self,
+        def_id: &str,
+        location: Point2D,
+    ) -> Result<web_sys::Element, RendererError> {
         Ok(crate::to_html(
             &SVGElem::new(Tag::Use)
-                .set(Attr::PositionX, location.x().into())
-                .set(Attr::PositionY, location.y().into())
+                .set(Attr::PositionX, location.0.into())
+                .set(Attr::PositionY, location.1.into())
                 .set(
                     Attr::Reference,
                     AttrValue::new_reference(def_id).expect("Invalid href id"),
@@ -210,7 +215,7 @@ impl Renderer {
     }
 
     /// Will add a use element to the root svg
-    fn add_use(&self, def_id: &str, location: Point) -> Result<(), RendererError> {
+    fn add_use(&self, def_id: &str, location: Point2D) -> Result<(), RendererError> {
         let root = self.get_svg_root()?;
         let use_element = self.create_use(def_id, location)?;
 
@@ -224,7 +229,7 @@ impl Renderer {
         &mut self,
         name: &str,
         def_id: &str,
-        location: Point,
+        location: Point2D,
     ) -> Result<String, RendererError> {
         let id_string = self.create_id_string(name)?;
 
@@ -243,7 +248,7 @@ impl Renderer {
         &mut self,
         name: &str,
         def_id: &str,
-        location: Point,
+        location: Point2D,
     ) -> Result<(), RendererError> {
         let container = self.get_named_container(name)?;
         let use_element = self.create_use(def_id, location)?;
@@ -259,7 +264,7 @@ impl Renderer {
         &mut self,
         name: &str,
         def_id: &str,
-        location: Point,
+        location: Point2D,
     ) -> Result<(), RendererError> {
         if name == ROOT_NAME {
             return Err(NamedNotUse(String::from(ROOT_NAME)));
@@ -289,12 +294,12 @@ impl Renderer {
             ))
         })?;
 
-        let value = &format!("{}", location.x())[..];
+        let value = &format!("{:.2}", location.0)[..];
         use_element
             .set_attribute("x", value)
             .map_err(|_| Dom(UnsetableAttribute(String::from("x"), String::from(value))))?;
 
-        let value = &format!("{}", location.y())[..];
+        let value = &format!("{:.2}", location.1)[..];
         use_element
             .set_attribute("y", value)
             .map_err(|_| Dom(UnsetableAttribute(String::from("y"), String::from(value))))?;
@@ -378,7 +383,7 @@ impl Renderer {
     ///
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -390,9 +395,9 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render(&circle, &Point::new(20, 20));
+    /// renderer.render(&circle, &Point2D::new(20, 20));
     /// ```
-    pub fn render(&mut self, figure: SVGElem, location: Point) {
+    pub fn render(&mut self, figure: SVGElem, location: Point2D) {
         let figure_id = Self::get_id_of_figure(Self::get_hash(&figure));
 
         // If there is already a definition
@@ -422,7 +427,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -434,14 +439,14 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, &Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, &Point2D::new(10, 10));
     ///
     /// // --snip
     ///
     /// // Updates the named figure's location to (20,20)
-    /// renderer.move_named("named_circle", Point::new(20, 20));
+    /// renderer.move_named("named_circle", Point2D::new(20, 20));
     /// ```
-    pub fn render_named(&mut self, name: &str, figure: SVGElem, location: Point) {
+    pub fn render_named(&mut self, name: &str, figure: SVGElem, location: Point2D) {
         let figure_id = Self::get_id_of_figure(Self::get_hash(&figure));
 
         // If there is already a definition
@@ -465,7 +470,7 @@ impl Renderer {
     ///
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -478,9 +483,9 @@ impl Renderer {
     /// let circle_id = renderer.define_render(&circle);
     ///
     /// // Render circle
-    /// renderer.render_id(circle_id, Point::new(20, 20));
+    /// renderer.render_id(circle_id, Point2D::new(20, 20));
     /// ```
-    pub fn render_id(&mut self, figure_id: u64, location: Point) {
+    pub fn render_id(&mut self, figure_id: u64, location: Point2D) {
         // If there is already a definition
         if !self.contains_id(figure_id) {
             // Add the definition to the dom and hashes
@@ -503,7 +508,7 @@ impl Renderer {
     ///
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -516,14 +521,14 @@ impl Renderer {
     /// let circle_id = renderer.define_render(&circle);
     ///
     /// // Render circle
-    /// renderer.render_named_id("named_circle", circle_id, Point::new(20, 20));
+    /// renderer.render_named_id("named_circle", circle_id, Point2D::new(20, 20));
     ///
     /// // --snip
     ///
     /// // Updates the Circle's location
-    /// renderer.move_named("named_circle", Point::new(25, 25));
+    /// renderer.move_named("named_circle", Point2D::new(25, 25));
     /// ```
-    pub fn render_named_id(&mut self, name: &str, figure_id: u64, location: Point) {
+    pub fn render_named_id(&mut self, name: &str, figure_id: u64, location: Point2D) {
         // If there is already a definition
         if !self.contains_id(figure_id) {
             // Add the definition to the dom and hashes
@@ -544,7 +549,7 @@ impl Renderer {
     ///
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -558,7 +563,7 @@ impl Renderer {
     /// let circle_id = renderer.define_render(&circle);
     ///
     /// // Render circle
-    /// renderer.render_id(circle_id, Point::new(20, 20));
+    /// renderer.render_id(circle_id, Point2D::new(20, 20));
     /// ```
     pub fn define_render(&mut self, figure: SVGElem) -> u64 {
         let figure_hash = Self::get_hash(&figure);
@@ -578,7 +583,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -590,7 +595,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point2D::new(10, 10));
     ///
     /// // --snip
     ///
@@ -600,7 +605,7 @@ impl Renderer {
     /// // Renders the circle with "named_circle" name again.
     /// // This would normally panic, since a name is redeclared,
     /// // but since the renderer is cleared, it will not. :)
-    /// renderer.render_named("named_circle", &circle, Point::new(20, 20));
+    /// renderer.render_named("named_circle", &circle, Point2D::new(20, 20));
     /// ```
     pub fn clear(&mut self) {
         self.get_svg_root()
@@ -628,7 +633,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -643,7 +648,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", &circle, Point::new(10, 10));
+    /// renderer.append_to_container("named_container", &circle, Point2D::new(10, 10));
     ///
     /// // Now the container contains the circle figure
     ///
@@ -657,7 +662,7 @@ impl Renderer {
     /// // Render circle in the named_container.
     /// // Since definitions were not cleared, it will use a previous definition.
     /// // This saves some processing time in this case.
-    /// renderer.append_to_container("named_container", &circle, Point::new(20, 20));
+    /// renderer.append_to_container("named_container", &circle, Point2D::new(20, 20));
     ///
     /// // Now the container contains the circle at a different position
     /// ```
@@ -677,7 +682,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -692,18 +697,18 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", &circle, Point::new(10, 10));
+    /// renderer.append_to_container("named_container", &circle, Point2D::new(10, 10));
     ///
     /// // Now the container contains the circle figure
     ///
     /// // --snip
     ///
     /// // Update the contents of the named container
-    /// renderer.update_named("named_container", &circle, Point::new(20, 20));
+    /// renderer.update_named("named_container", &circle, Point2D::new(20, 20));
     ///
     /// // Now the container contains the circle at a different position
     /// ```
-    pub fn update_named(&mut self, name: &str, figure: SVGElem, location: Point) {
+    pub fn update_named(&mut self, name: &str, figure: SVGElem, location: Point2D) {
         let figure_id = Self::get_id_of_figure(Self::get_hash(&figure));
 
         // If there is already a definition
@@ -741,7 +746,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -758,18 +763,18 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", &circle, Point::new(10, 10));
+    /// renderer.append_to_container("named_container", &circle, Point2D::new(10, 10));
     ///
     /// // Now the container contains the circle figure
     ///
     /// // --snip
     ///
     /// // Update the contents of the named container
-    /// renderer.update_named_with_id("named_container", circle_id, Point::new(20, 20));
+    /// renderer.update_named_with_id("named_container", circle_id, Point2D::new(20, 20));
     ///
     /// // Now the container contains the circle at a different position
     /// ```
-    pub fn update_named_with_id(&mut self, name: &str, figure_id: u64, location: Point) {
+    pub fn update_named_with_id(&mut self, name: &str, figure_id: u64, location: Point2D) {
         // If there is already a definition
         if !self.contains_id(figure_id) {
             panic!("No definition found!");
@@ -799,7 +804,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -811,7 +816,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point2D::new(10, 10));
     ///
     /// // --snip
     ///
@@ -833,7 +838,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -845,7 +850,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point2D::new(10, 10));
     ///
     /// // Hides the named figure
     /// renderer.hide_named("named_circle");
@@ -875,7 +880,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -890,11 +895,11 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", &circle, Point::new(10, 10));
+    /// renderer.append_to_container("named_container", &circle, Point2D::new(10, 10));
     ///
     /// // Now the container contains the circle figure
     /// ```
-    pub fn append_to_container(&mut self, name: &str, figure: SVGElem, location: Point) {
+    pub fn append_to_container(&mut self, name: &str, figure: SVGElem, location: Point2D) {
         let figure_id = Self::get_id_of_figure(Self::get_hash(&figure));
 
         // If there is already a definition
@@ -922,7 +927,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -939,11 +944,11 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container_with_id("named_container", &circle, Point::new(10, 10));
+    /// renderer.append_to_container_with_id("named_container", &circle, Point2D::new(10, 10));
     ///
     /// // Now the container contains the circle figure
     /// ```
-    pub fn append_to_container_with_id(&mut self, name: &str, figure_id: u64, location: Point) {
+    pub fn append_to_container_with_id(&mut self, name: &str, figure_id: u64, location: Point2D) {
         // If there is already a definition
         if !self.contains_id(figure_id) {
             panic!("Definition not found!")
@@ -962,7 +967,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -974,7 +979,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point2D::new(10, 10));
     ///
     /// // --snip
     ///
@@ -984,7 +989,7 @@ impl Renderer {
     /// // Renders the circle with "named_circle" name again.
     /// // This would normally panic, since a name is redeclared,
     /// // but since the named figure is deleted, it will not. :)
-    /// renderer.render_named("named_circle", &circle, Point::new(20, 20));
+    /// renderer.render_named("named_circle", &circle, Point2D::new(20, 20));
     /// ```
     pub fn delete_named(&mut self, name: &str) {
         let container = self.get_named_container(name);
@@ -1018,7 +1023,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -1033,7 +1038,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point2D::new(10, 10));
     ///
     /// // Will be set to true
     /// let does_named_circle_exist = renderer.does_name_exist("named_circle");
@@ -1047,7 +1052,7 @@ impl Renderer {
     /// // Renders the circle with "named_circle" name again.
     /// // This would normally panic, since a name is redeclared,
     /// // but since the named figure is deleted, it will not. :)
-    /// renderer.render_named("named_circle", &circle, Point::new(20, 20));
+    /// renderer.render_named("named_circle", &circle, Point2D::new(20, 20));
     ///
     /// // Will be set to true
     /// let does_named_circle_exist = renderer.does_name_exist("named_circle");
@@ -1065,7 +1070,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -1080,7 +1085,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", &circle, Point::new(10, 10));
+    /// renderer.append_to_container("named_container", &circle, Point2D::new(10, 10));
     /// ```
     pub fn create_named_container(&mut self, name: &str, parent: &str) {
         let parent = self
@@ -1110,7 +1115,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -1122,13 +1127,13 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point2D::new(10, 10));
     ///
     /// // --snip
     ///
     /// // Moves the named figure to a new location
-    /// renderer.move_named("named_circle", Point::new(5, 5));
-    pub fn move_named(&mut self, name: &str, loc: Point) {
+    /// renderer.move_named("named_circle", Point2D::new(5, 5));
+    pub fn move_named(&mut self, name: &str, loc: Point2D) {
         if !self.does_name_exist(name) {
             panic!("Failed to move named figure: Name doesn't exist!");
         }
@@ -1143,10 +1148,10 @@ impl Renderer {
             .unwrap();
 
         element
-            .set_attribute("x", &format!("{}", loc.x())[..])
+            .set_attribute("x", &format!("{:.2}", loc.0)[..])
             .unwrap();
         element
-            .set_attribute("y", &format!("{}", loc.y())[..])
+            .set_attribute("y", &format!("{:.2}", loc.1)[..])
             .unwrap();
     }
 
@@ -1161,7 +1166,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
@@ -1173,7 +1178,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", &circle, Point::new(10, 10));
+    /// renderer.render_named("named_circle", &circle, Point2D::new(10, 10));
     ///
     /// // Create a named container
     /// renderer.create_named_container("named_container", "root");
@@ -1200,7 +1205,7 @@ impl Renderer {
     /// # Examples
     /// ```
     /// use wasm_svg_graphics::figures;
-    /// use geom_2d::point::Point;
+    /// use geom_2d::Point2D::Point2D;
     /// use wasm_svg_graphics::renderer::Renderer;
     ///
     /// // Declare renderer (must be mutable)
