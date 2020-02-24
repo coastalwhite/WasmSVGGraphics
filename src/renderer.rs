@@ -1,10 +1,10 @@
-use crate::figures::Figure;
 use crate::{get_document, NAME_ID_PREFIX};
 use geom_2d::point::Point;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
+use svg_definitions::prelude::*;
 
 use crate::errors::DomError::*;
 use crate::errors::RendererError;
@@ -53,6 +53,26 @@ impl Renderer {
         })
     }
 
+    fn get_hash(figure: &SVGElem) -> u64 {
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+
+        figure.hash(&mut hasher);
+
+        hasher.finish()
+    }
+
+    fn to_def(figure: SVGElem) -> web_sys::Element {
+        crate::to_html(
+            &SVGElem::new(Tag::Group)
+                .set(
+                    Attr::Identifier,
+                    AttrValue::new_id(&Self::get_id_of_figure(Self::get_hash(&figure))[..])
+                        .expect("Invalid Id"),
+                )
+                .append(figure),
+        )
+    }
+
     /// Will return the parent of the svg
     fn get_root(&self) -> Result<web_sys::Element, RendererError> {
         let document = crate::get_document()?;
@@ -93,8 +113,8 @@ impl Renderer {
     }
 
     /// Returns whether the renderer already has a definition for the shape
-    fn contains_figure(&self, figure: &Figure) -> bool {
-        self.contains_id(figure.get_hash())
+    fn contains_figure(&self, figure: &SVGElem) -> bool {
+        self.contains_id(Self::get_hash(figure))
     }
 
     /// Returns whether the renderer already has a definition for the shape
@@ -103,12 +123,13 @@ impl Renderer {
     }
 
     /// Adds a def to the binary tree
-    fn add_def(&mut self, figure: &Figure) -> Result<(), RendererError> {
+    fn add_def(&mut self, figure: SVGElem) -> Result<(), RendererError> {
+        let hash = Self::get_hash(&figure);
+
         self.get_defs_root()?
-            .append_child(&figure.to_def())
+            .append_child(&web_sys::Node::from(Self::to_def(figure)))
             .map_err(|_| Dom(UnappendableElement))?;
 
-        let hash = figure.get_hash();
         self.figure_defs.insert(hash);
 
         Ok(())
@@ -116,27 +137,15 @@ impl Renderer {
 
     /// Creates a use element from a def_id and location
     fn create_use(&self, def_id: &str, location: Point) -> Result<web_sys::Element, RendererError> {
-        let use_element = crate::create_element_ns(crate::SVG_NS, "use")?;
-
-        let value = &format!("#{}", def_id)[..];
-        use_element.set_attribute("href", value).map_err(|_| {
-            Dom(UnsetableAttribute(
-                String::from("href"),
-                String::from(value),
-            ))
-        })?;
-
-        let value = &format!("{}", location.x())[..];
-        use_element
-            .set_attribute("x", value)
-            .map_err(|_| Dom(UnsetableAttribute(String::from("x"), String::from(value))))?;
-
-        let value = &format!("{}", location.y())[..];
-        use_element
-            .set_attribute("y", value)
-            .map_err(|_| Dom(UnsetableAttribute(String::from("y"), String::from(value))))?;
-
-        Ok(use_element)
+        Ok(crate::to_html(
+            &SVGElem::new(Tag::Use)
+                .set(Attr::PositionX, location.x().into())
+                .set(Attr::PositionY, location.y().into())
+                .set(
+                    Attr::Reference,
+                    AttrValue::new_reference(def_id).expect("Invalid href id"),
+                ),
+        ))
     }
 
     /// Creates a new id string from name
@@ -383,15 +392,17 @@ impl Renderer {
     /// // the renderer will add the shape's definition)
     /// renderer.render(&circle, &Point::new(20, 20));
     /// ```
-    pub fn render(&mut self, figure: &Figure, location: Point) {
+    pub fn render(&mut self, figure: SVGElem, location: Point) {
+        let figure_id = Self::get_id_of_figure(Self::get_hash(&figure));
+
         // If there is already a definition
-        if !self.contains_figure(figure) {
+        if !self.contains_figure(&figure) {
             // Add the definition to the dom and hashes
             self.add_def(figure).expect("Failed to add definition!");
         }
 
         // Add use of definition
-        self.add_use(&figure.get_id()[..], location)
+        self.add_use(&figure_id[..], location)
             .expect("Failed to add use!");
     }
 
@@ -430,15 +441,17 @@ impl Renderer {
     /// // Updates the named figure's location to (20,20)
     /// renderer.move_named("named_circle", Point::new(20, 20));
     /// ```
-    pub fn render_named(&mut self, name: &str, figure: &Figure, location: Point) {
+    pub fn render_named(&mut self, name: &str, figure: SVGElem, location: Point) {
+        let figure_id = Self::get_id_of_figure(Self::get_hash(&figure));
+
         // If there is already a definition
-        if !self.contains_figure(figure) {
+        if !self.contains_figure(&figure) {
             // Add the definition to the dom and hashes
             self.add_def(figure).expect("Failed to add definition!");
         }
 
         // Add named use of definition
-        self.add_named_use(name, &figure.get_id()[..], location)
+        self.add_named_use(name, &figure_id[..], location)
             .expect("Failed to add named use!");
     }
 
@@ -547,14 +560,16 @@ impl Renderer {
     /// // Render circle
     /// renderer.render_id(circle_id, Point::new(20, 20));
     /// ```
-    pub fn define_render(&mut self, figure: &Figure) -> u64 {
+    pub fn define_render(&mut self, figure: SVGElem) -> u64 {
+        let figure_hash = Self::get_hash(&figure);
+
         // If there is already a definition
-        if !self.contains_figure(figure) {
+        if !self.contains_figure(&figure) {
             // Add the definition to the dom and hashes
             self.add_def(figure).expect("Failed to add definition!");
         }
 
-        figure.get_hash()
+        figure_hash
     }
 
     /// Clears all elements within the SVG element and clears all internal definitions.
@@ -688,9 +703,11 @@ impl Renderer {
     ///
     /// // Now the container contains the circle at a different position
     /// ```
-    pub fn update_named(&mut self, name: &str, figure: &Figure, location: Point) {
+    pub fn update_named(&mut self, name: &str, figure: SVGElem, location: Point) {
+        let figure_id = Self::get_id_of_figure(Self::get_hash(&figure));
+
         // If there is already a definition
-        if !self.contains_figure(figure) {
+        if !self.contains_figure(&figure) {
             // Add the definition to the dom and hashes
             self.add_def(figure)
                 .expect("Failed to add named definition!");
@@ -703,11 +720,11 @@ impl Renderer {
             self.clear_named_container(name);
 
             // Add element to container
-            self.add_use_to(name, &figure.get_id(), location)
+            self.add_use_to(name, &figure_id, location)
                 .expect("Failed to add named use!");
         } else {
             // Adjust use element
-            self.adjust_use_to(name, &figure.get_id(), location)
+            self.adjust_use_to(name, &figure_id, location)
                 .expect("Failed to adjust use element!");
         }
     }
@@ -877,15 +894,17 @@ impl Renderer {
     ///
     /// // Now the container contains the circle figure
     /// ```
-    pub fn append_to_container(&mut self, name: &str, figure: &Figure, location: Point) {
+    pub fn append_to_container(&mut self, name: &str, figure: SVGElem, location: Point) {
+        let figure_id = Self::get_id_of_figure(Self::get_hash(&figure));
+
         // If there is already a definition
-        if !self.contains_figure(figure) {
+        if !self.contains_figure(&figure) {
             // Add the definition to the dom and hashes
             self.add_def(figure)
                 .expect("Failed to add named definition!");
         }
 
-        self.add_use_to(name, &figure.get_id()[..], location)
+        self.add_use_to(name, &figure_id[..], location)
             .expect("Failed to add figure to container!")
     }
 

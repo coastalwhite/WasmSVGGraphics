@@ -180,14 +180,10 @@ use crate::errors::DomError::*;
 use crate::errors::RendererError;
 use crate::errors::RendererError::*;
 
+use svg_definitions::prelude::*;
+
 /// Container for the actual renderer object, this includes all logic for adding items to the DOM and for detecting duplication
 pub mod renderer;
-
-/// Container for the figures, this includes all definitions for shapes and styling
-pub mod figures;
-
-/// Container with the color object, and all it's logic
-pub mod color;
 
 /// Container with all the errors, mostly used internally
 pub mod errors;
@@ -206,4 +202,21 @@ fn create_element_ns(namespace: &str, name: &str) -> Result<web_sys::Element, Re
     get_document()?
         .create_element_ns(Some(namespace), name)
         .map_err(|_| Dom(UncreatableNSElement))
+}
+
+fn to_html(svg_elem: &SVGElem) -> web_sys::Element {
+    let elem = create_element_ns(SVG_NS, &svg_elem.get_tag_name().to_string()[..])
+        .expect("Failed to create element");
+
+    svg_elem.get_attributes().iter().for_each(|(attr, value)| {
+        elem.set_attribute(&attr.to_string()[..], &value.to_string()[..])
+            .expect("Failed to set attribute");
+    });
+
+    svg_elem.get_children().iter().for_each(|child| {
+        elem.append_child(&to_html(child))
+            .expect("Failed to append child");
+    });
+
+    elem
 }
