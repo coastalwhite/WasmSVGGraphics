@@ -5,8 +5,6 @@ use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use svg_definitions::prelude::*;
 
-use crate::Point2D;
-
 use crate::errors::DomError::*;
 use crate::errors::RendererError;
 use crate::errors::RendererError::*;
