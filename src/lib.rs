@@ -17,79 +17,41 @@
 //! # Examples
 //! ## Basics (How to render a circle)
 //! ```
-//! use wasm_svg_graphics::figures;
-//! use geom_2d::point::Point;
-//! use wasm_svg_graphics::renderer::Renderer;
+//! use wasm_svg_graphics::prelude::*;
 //!
 //! // Declare renderer (must be mutable) into a parent container
-//! let mut renderer = Renderer::new("svg_parent_id")
+//! let mut renderer = SVGRenderer::new("svg_parent_id")
 //!     .expect("Failed to create renderer!");
 //!
 //! // Generate circle
-//! let circle = figures::preset::circle(10);
+//! let circle = SVGDefault::circle(10);
 //!
 //! // Render circle (since it's the first time of rendering this shape,
 //! // the renderer will add the shape's definition)
-//! renderer.render(&circle, Point::new(20, 20));
+//! renderer.render(&circle, (20.0, 20.0));
 //! ```
 //!
 //! As one can see, it's not that difficult render a circle to the svg
 //!
 //! ## Basics (How to render a custom shape)
 //! ```
-//! use wasm_svg_graphics::figures::Figure;
-//! use wasm_svg_graphics::figures::shape::*;
-//! use wasm_svg_graphics::figures::circle::CircleProps;
-//! use wasm_svg_graphics::figures::path::PathProps;
-//! use wasm_svg_graphics::figures::sub_path::SubPath;
-//! use geom_2d::point::Point;
-//! use wasm_svg_graphics::renderer::Renderer;
+//! use wasm_svg_graphics::prelude::*;
 //!
 //! // Declare renderer (must be mutable) into a parent container
 //! let mut renderer = Renderer::new("svg_parent_id")
 //!     .expect("Failed to create renderer!");
 //!
-//! let style = ShapeStyle::new_from_default();
+//! let smiley = SVGElem::new(Tag::Group).append(
+//!     SVGDefault::set_loc(SVGDefault::circle(20), 0, 0)
+//! ).append(
+//!     SVGDefault::set_loc(SVGDefault::circle(3), -7, -7)
+//! ).append(
+//!     SVGDefault::set_loc(SVGDefault::circle(3), 7, -7)
+//! ).append(
+//!     SVGDefault::set_loc(SVGDefault::curve(7, 5, -4, 10, 4, 40), -7, 5);
+//! );
 //!
-//! // Generate smiley
-//! let style = ShapeStyle::new_from_default();
-//!
-//! let smiley = Figure::new(vec![
-//!    // Head
-//!    (
-//!        Shape::new(style.clone(), SubShape::Circle(CircleProps::new(20))),
-//!        Point::new(0, 0),
-//!    ),
-//!    // Left eye
-//!    (
-//!        Shape::new(style.clone(), SubShape::Circle(CircleProps::new(3))),
-//!        Point::new(-7, -7),
-//!    ),
-//!    // Right eye
-//!    (
-//!        Shape::new(style.clone(), SubShape::Circle(CircleProps::new(3))),
-//!        Point::new(7, -7),
-//!    ),
-//!    // Mouth
-//!    (
-//!        Shape::new(
-//!            style.clone(),
-//!            SubShape::Path(PathProps::new(
-//!                Point::new(-7, 0), // Beginning point
-//!                vec![SubPath::new_bezier_curve(
-//!                    // Create a new curve
-//!                    Point::new(-4, 5), // Control point 1
-//!                    Point::new(4, 5),  // Control point 2
-//!                    Point::new(7, 0),  // Ending point
-//!                )],
-//!                false, // Is path closed?
-//!             )),
-//!        ),
-//!        Point::new(0, 5),
-//!    ),
-//! ]);
-//!
-//! renderer.render(&smiley, Point::new(25, 25));
+//! renderer.render(smiley, (25.0, 25.0));
 //! ```
 //!
 //! Declaring custom figures is maybe somewhat of a cumbersome tasks but most definitely worth it!
@@ -97,83 +59,27 @@
 //! ## Basics (How to render with custom style)
 //! Let's use the smiley example from before, but now color it yellow
 //! ```
-//! use wasm_svg_graphics::figures::Figure;
-//! use wasm_svg_graphics::figures::shape::*;
-//! use wasm_svg_graphics::figures::circle::CircleProps;
-//! use wasm_svg_graphics::figures::path::PathProps;
-//! use wasm_svg_graphics::figures::sub_path::SubPath;
-//! use geom_2d::point::Point;
-//! use wasm_svg_graphics::renderer::Renderer;
-//! use wasm_svg_graphics::color::Color;
+//! use wasm_svg_graphics::prelude::*;
 //!
 //! // Declare renderer (must be mutable) into a parent container
 //! let mut renderer = Renderer::new("svg_parent_id")
 //!     .expect("Failed to create renderer!");
 //!
-//! // Create head style
-//! let mut yellow_stroke = ShapeStyle::new_from_default();
-//!
-//! // Assign a yellow stroke color
-//! yellow_stroke.add_style(
-//!     AttributeField::StrokeColor,
-//!     Color::new(255,255,0).to_string()
+//! let colored_smiley = SVGElem::new(Tag::Group).append(
+//!     SVGDefault::set_loc(SVGDefault::circle(20), 0, 0)
+//!     .set(Attr::StrokeColor, RGB::new(255, 255, 0).into())
+//! ).append(
+//!     SVGDefault::set_loc(SVGDefault::circle(3), -7, -7)
+//!     .set(Attr::FillColor, RGB::new(0, 0, 0).into())
+//! ).append(
+//!     SVGDefault::set_loc(SVGDefault::circle(3), 7, -7)
+//!     .set(Attr::FillColor, RGB::new(0, 0, 0).into())
+//! ).append(
+//!     SVGDefault::set_loc(SVGDefault::curve(7, 5, -4, 10, 4, 40), -7, 5)
+//!     .set(Attr::StrokeColor, RGB::new(255, 0, 0).into())
 //! );
 //!
-//! // Create eye style
-//! let mut black_fill = ShapeStyle::new_from_default();
-//!
-//! // Assign a yellow stroke color
-//! black_fill.add_style(
-//!     AttributeField::FillColor,
-//!     Color::new(0,0,0).to_string()
-//! );
-//!
-//! // Create head style
-//! let mut red_stroke = ShapeStyle::new_from_default();
-//!
-//! // Assign a yellow stroke color
-//! red_stroke.add_style(
-//!     AttributeField::StrokeColor,
-//!     Color::new(255,0,0).to_string()
-//! );
-//!
-//! // Generate smiley
-//! let smiley = Figure::new(vec![
-//!    // Head
-//!    (
-//!        Shape::new(yellow_stroke.clone(), SubShape::Circle(CircleProps::new(20))),
-//!        Point::new(0, 0),
-//!    ),
-//!    // Left eye
-//!    (
-//!        Shape::new(black_fill.clone(), SubShape::Circle(CircleProps::new(3))),
-//!        Point::new(-7, -7),
-//!    ),
-//!    // Right eye
-//!    (
-//!        Shape::new(black_fill.clone(), SubShape::Circle(CircleProps::new(3))),
-//!        Point::new(7, -7),
-//!    ),
-//!    // Mouth
-//!    (
-//!        Shape::new(
-//!            red_stroke.clone(),
-//!            SubShape::Path(PathProps::new(
-//!                Point::new(-7, 0), // Beginning point
-//!                vec![SubPath::new_bezier_curve(
-//!                    // Create a new curve
-//!                    Point::new(-4, 5), // Control point 1
-//!                    Point::new(4, 5),  // Control point 2
-//!                    Point::new(7, 0),  // Ending point
-//!                )],
-//!                false, // Is path closed?
-//!             )),
-//!        ),
-//!        Point::new(0, 5),
-//!    ),
-//! ]);
-//!
-//! renderer.render(&smiley, Point::new(25, 25));
+//! renderer.render(colored_smiley, (25.0, 25.0));
 //! ```
 
 use crate::errors::DomError::*;

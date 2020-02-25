@@ -9,6 +9,8 @@ pub fn circle(radius: i32) -> SVGElem {
         .set(Attr::StrokeColor, RGB::new(0, 0, 0).into())
         .set(Attr::StrokeWidth, 1.into())
         .set(Attr::FillColor, RGBT::Transparent.into())
+        .set(Attr::CenterX, 0.into())
+        .set(Attr::CenterY, 0.into())
 }
 
 /// Creates a default rectangle with a certain width and height
@@ -48,6 +50,11 @@ pub fn polygon(points: Vec<(i32, i32)>) -> SVGElem {
         .set(Attr::PathDefinition, path_string.into())
         .set(Attr::StrokeWidth, 1.into())
         .set(Attr::StrokeColor, RGB::new(0, 0, 0).into())
+}
+
+pub fn set_loc(elem: SVGElem, x: i32, y: i32) -> SVGElem {
+    elem.set(Attr::PositionX, x.into())
+        .set(Attr::PositionY, y.into())
 }
 
 fn as_point_2d(point: (i32, i32)) -> Point2D {
