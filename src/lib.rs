@@ -188,6 +188,8 @@ pub mod renderer;
 /// Container with all the errors, mostly used internally
 pub mod errors;
 
+pub mod default;
+
 const NAME_ID_PREFIX: &str = "named";
 const SHAPE_ID_PREFIX: &str = "figure";
 const SVG_NS: &str = "http://www.w3.org/2000/svg";
