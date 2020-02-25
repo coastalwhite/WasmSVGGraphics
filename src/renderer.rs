@@ -61,15 +61,9 @@ impl Renderer {
     }
 
     fn to_def(figure: SVGElem) -> web_sys::Element {
-        crate::to_html(
-            &SVGElem::new(Tag::Group)
-                .set(
-                    Attr::Identifier,
-                    AttrValue::new_id(&Self::get_id_of_figure(Self::get_hash(&figure))[..])
-                        .expect("Invalid Id"),
-                )
-                .append(figure),
-        )
+        let elem = crate::to_html(&figure);
+        elem.set_id(&Self::get_id_of_figure(Self::get_hash(&figure)));
+        elem
     }
 
     /// Will return the parent of the svg
@@ -347,21 +341,20 @@ impl Renderer {
             .get_element_by_id(dom_root_id)
             .ok_or(Dom(UnfindableId(String::from(dom_root_id))))?;
 
-        let svg_element = crate::create_element_ns("http://www.w3.org/2000/svg", "svg")?;
-        let defs_element = crate::create_element_ns("http://www.w3.org/2000/svg", "defs")?;
+        let svg_element = SVGElem::new(Tag::SVG)
+            .set(
+                Attr::ViewBox,
+                (
+                    DEFAULT_VIEWBOX[0],
+                    DEFAULT_VIEWBOX[1],
+                    DEFAULT_VIEWBOX[2],
+                    DEFAULT_VIEWBOX[3],
+                )
+                    .into(),
+            )
+            .append(SVGElem::new(Tag::Defs));
 
-        Renderer::set_view_box(
-            &svg_element,
-            DEFAULT_VIEWBOX[0],
-            DEFAULT_VIEWBOX[1],
-            DEFAULT_VIEWBOX[2],
-            DEFAULT_VIEWBOX[3],
-        )?;
-
-        svg_element
-            .append_child(&defs_element)
-            .map_err(|_| Dom(UnappendableElement))?;
-        root.append_child(&svg_element)
+        root.append_child(&crate::to_html(&svg_element))
             .map_err(|_| Dom(UnappendableElement))?;
 
         Ok(Renderer {
