@@ -5,51 +5,45 @@
 //! * Automatically detect if two shapes are the same, so only one defintion will get added to the DOM
 //! * Declare named items for later adjustments
 //!
+//! # SVG Definitions
+//! To define custom shapes and for all the documentation have a look at the [svg_definitions](https://crates.io/crates/svg_definitions) crate.
+//!
 //! # Note
 //! This crate is still under development, but most API calls for 1.0.0 are completed.
 //! If any bugs are found please submit a issue or a pull request at:
 //! [GitHub](https://github.com/coastalwhite/WasmSVGGraphics)
 //!
-//! # Roadmap
-//! * Create more options for shapes, and create a easier way to declare these
-//! * Create more styling options and make these dynamic with subshapes
-//!
 //! # Examples
 //! ## Basics (How to render a circle)
-//! ```
+//! ```rust,no_run
 //! use wasm_svg_graphics::prelude::*;
 //!
 //! // Declare renderer (must be mutable) into a parent container
-//! let mut renderer = SVGRenderer::new("svg_parent_id")
-//!     .expect("Failed to create renderer!");
+//! let mut renderer = SVGRenderer::new("svg_parent_id").expect("Failed to create renderer!");
 //!
 //! // Generate circle
 //! let circle = SVGDefault::circle(10);
 //!
 //! // Render circle (since it's the first time of rendering this shape,
 //! // the renderer will add the shape's definition)
-//! renderer.render(&circle, (20.0, 20.0));
+//! renderer.render(circle, (20.0, 20.0));
 //! ```
 //!
 //! As one can see, it's not that difficult render a circle to the svg
 //!
 //! ## Basics (How to render a custom shape)
-//! ```
+//! ```rust,no_run
 //! use wasm_svg_graphics::prelude::*;
 //!
 //! // Declare renderer (must be mutable) into a parent container
-//! let mut renderer = Renderer::new("svg_parent_id")
+//! let mut renderer = SVGRenderer::new("svg_parent_id")
 //!     .expect("Failed to create renderer!");
 //!
-//! let smiley = SVGElem::new(Tag::Group).append(
-//!     SVGDefault::set_loc(SVGDefault::circle(20), 0, 0)
-//! ).append(
-//!     SVGDefault::set_loc(SVGDefault::circle(3), -7, -7)
-//! ).append(
-//!     SVGDefault::set_loc(SVGDefault::circle(3), 7, -7)
-//! ).append(
-//!     SVGDefault::set_loc(SVGDefault::curve(7, 5, -4, 10, 4, 40), -7, 5);
-//! );
+//! let smiley = SVGElem::new(Tag::Group)
+//!     .append(SVGDefault::circle(20))
+//!     .append(SVGDefault::set_circle_loc(SVGDefault::circle(3), -7, -7))
+//!     .append(SVGDefault::set_circle_loc(SVGDefault::circle(3), 7, -7))
+//!     .append(SVGDefault::curve(-7, 5, 7, 5, -4, 10, 4, 10));
 //!
 //! renderer.render(smiley, (25.0, 25.0));
 //! ```
@@ -58,26 +52,28 @@
 //!
 //! ## Basics (How to render with custom style)
 //! Let's use the smiley example from before, but now color it yellow
-//! ```
+//! ```rust,no_run
 //! use wasm_svg_graphics::prelude::*;
 //!
 //! // Declare renderer (must be mutable) into a parent container
-//! let mut renderer = Renderer::new("svg_parent_id")
+//! let mut renderer = SVGRenderer::new("svg_parent_id")
 //!     .expect("Failed to create renderer!");
 //!
-//! let colored_smiley = SVGElem::new(Tag::Group).append(
-//!     SVGDefault::set_loc(SVGDefault::circle(20), 0, 0)
-//!     .set(Attr::StrokeColor, RGB::new(255, 255, 0).into())
-//! ).append(
-//!     SVGDefault::set_loc(SVGDefault::circle(3), -7, -7)
-//!     .set(Attr::FillColor, RGB::new(0, 0, 0).into())
-//! ).append(
-//!     SVGDefault::set_loc(SVGDefault::circle(3), 7, -7)
-//!     .set(Attr::FillColor, RGB::new(0, 0, 0).into())
-//! ).append(
-//!     SVGDefault::set_loc(SVGDefault::curve(7, 5, -4, 10, 4, 40), -7, 5)
-//!     .set(Attr::StrokeColor, RGB::new(255, 0, 0).into())
-//! );
+//! let colored_smiley = SVGElem::new(Tag::Group)
+//!     .append(SVGDefault::circle(20).set(Attr::StrokeColor, RGB::new(255, 255, 0).into()))
+//!     .append(
+//!         SVGDefault::set_circle_loc(SVGDefault::circle(3), -7, -7)
+//!             .set(Attr::FillColor, RGB::new(0, 0, 0).into()),
+//!     )
+//!     .append(
+//!         SVGDefault::set_circle_loc(SVGDefault::circle(3), 7, -7)
+//!             .set(Attr::FillColor, RGB::new(0, 0, 0).into()),
+//!     )
+//!     .append(
+//!         SVGDefault::curve(-7, 5, 7, 5, -4, 10, 4, 10)
+//!             .set(Attr::StrokeColor, RGB::new(255, 0, 0).into())
+//!             .set(Attr::FillColor, RGBT::Transparent.into()),
+//!     );
 //!
 //! renderer.render(colored_smiley, (25.0, 25.0));
 //! ```
@@ -88,13 +84,10 @@ use crate::errors::RendererError::*;
 
 use svg_definitions::prelude::*;
 
-/// Container for the actual renderer object, this includes all logic for adding items to the DOM and for detecting duplication
-pub mod renderer;
-
-/// Container with all the errors, mostly used internally
-pub mod errors;
-
 pub mod default;
+mod errors;
+pub mod prelude;
+pub mod renderer;
 
 const NAME_ID_PREFIX: &str = "named";
 const SHAPE_ID_PREFIX: &str = "figure";

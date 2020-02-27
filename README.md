@@ -21,3 +21,7 @@ If any bugs are found please submit a issue or a pull request at:
 # Further notice
 
 The _-dev_ versions are purely for testing and should not serve as production or development versions.
+
+# Testing
+
+When working on this crate, some testing was done of the documentation using the [wasm_bindgen_test](https://crates.io/crates/wasm-bindgen-test) crate. These tests can be found in the github under _/tests/web.rs_ and can be executed with [wasm_pack](https://github.com/rustwasm/wasm-pack) using the command `wasm-pack test --headless --firefox --chrome --safari`

@@ -1,6 +1,6 @@
 [package]
 name = "wasm_svg_graphics"
-version = "1.0.0-beta1"
+version = "1.0.0-beta2"
 authors = ["Gijs Burghoorn <g.burghoorn@gmail.com>"]
 edition = "2018"
 description = "A Rust library for rendering SVG Graphics with WASM"
@@ -14,8 +14,15 @@ categories = ["graphics", "rendering", "wasm"]
 
 readme = "./README.md"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 svg_definitions = "0.1.0"
+
+[dev-dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-test = "0.2"
 
 [dependencies.web-sys]
 version = "0.3.4"
@@ -35,3 +42,6 @@ features = [
     'ShadowRootInit',
     'ShadowRootMode',
 ]
+
+[profile.release]
+opt-level = "s"

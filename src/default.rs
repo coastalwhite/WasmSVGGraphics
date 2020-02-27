@@ -24,13 +24,22 @@ pub fn rect(width: i32, height: i32) -> SVGElem {
 }
 
 /// Creates a default curve with control points 1 and 2 and an end point
-pub fn curve(x: i32, y: i32, cx1: i32, cy1: i32, cx2: i32, cy2: i32) -> SVGElem {
+pub fn curve(
+    sx: i32,
+    sy: i32,
+    ex: i32,
+    ey: i32,
+    cx1: i32,
+    cy1: i32,
+    cx2: i32,
+    cy2: i32,
+) -> SVGElem {
     SVGElem::new(Tag::SVGPath).set(
         Attr::PathDefinition,
         PathString::new()
-            .move_to((0.0, 0.0))
+            .move_to(as_point_2d((sx, sy)))
             .curve_to(
-                as_point_2d((x, y)),
+                as_point_2d((ex, ey)),
                 as_point_2d((cx1, cy1)),
                 as_point_2d((cx2, cy2)),
             )
@@ -52,9 +61,16 @@ pub fn polygon(points: Vec<(i32, i32)>) -> SVGElem {
         .set(Attr::StrokeColor, RGB::new(0, 0, 0).into())
 }
 
+/// Sets the location of SVG elem (for circles use [set_circle_loc](#set_circle_loc))
 pub fn set_loc(elem: SVGElem, x: i32, y: i32) -> SVGElem {
     elem.set(Attr::PositionX, x.into())
         .set(Attr::PositionY, y.into())
+}
+
+/// Sets the location of SVG Circle (for non circles use [set_loc](#set_loc))
+pub fn set_circle_loc(elem: SVGElem, x: i32, y: i32) -> SVGElem {
+    elem.set(Attr::CenterX, x.into())
+        .set(Attr::CenterY, y.into())
 }
 
 fn as_point_2d(point: (i32, i32)) -> Point2D {

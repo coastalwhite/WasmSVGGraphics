@@ -1,13 +1,16 @@
-use crate::{get_document, NAME_ID_PREFIX};
+//! Renderer of SVG Graphics within the webpage, contains definitions and names
+
 use std::collections::hash_map::DefaultHasher;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
+
 use svg_definitions::prelude::*;
 
 use crate::errors::DomError::*;
 use crate::errors::RendererError;
 use crate::errors::RendererError::*;
+use crate::{get_document, NAME_ID_PREFIX};
 
 const ROOT_NAME: &str = "root";
 
@@ -206,6 +209,27 @@ impl Renderer {
         Ok(container)
     }
 
+    /// Will retrieve the web_sys element of a named container
+    fn get_named_item(&self, name: &str) -> Result<web_sys::Element, RendererError> {
+        if name == ROOT_NAME {
+            return self.get_svg_root();
+        }
+
+        let id_hash = self.name_defs.get(name);
+
+        if id_hash == None {
+            return Err(UnfindableName(String::from(name)));
+        }
+
+        let id_hash = id_hash.unwrap();
+
+        let container = get_document()?
+            .get_element_by_id(&Renderer::get_id_of_named(id_hash)[..])
+            .ok_or(Dom(UnfindableId(Renderer::get_id_of_named(id_hash))))?;
+
+        Ok(container)
+    }
+
     /// Will add a use element to the root svg
     fn add_use(&self, def_id: &str, location: Point2D) -> Result<(), RendererError> {
         let root = self.get_svg_root()?;
@@ -372,11 +396,11 @@ impl Renderer {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
     ///
     /// // Generate circle
@@ -384,7 +408,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render(circle, (20, 20));
+    /// renderer.render(circle, (20.0, 20.0));
     /// ```
     pub fn render(&mut self, figure: SVGElem, location: Point2D) {
         let figure_id = Self::get_id_of_figure(Self::get_hash(&figure));
@@ -414,11 +438,11 @@ impl Renderer {
     /// One is able to check if a name already exists with the [does_name_exist](#method.does_name_exist) method.
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
     ///
     /// // Generate circle
@@ -455,11 +479,11 @@ impl Renderer {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
     ///
     /// // Generate circle
@@ -468,7 +492,7 @@ impl Renderer {
     /// let circle_id = renderer.define_render(circle);
     ///
     /// // Render circle
-    /// renderer.render_id(circle_id, (20, 20));
+    /// renderer.render_id(circle_id, (20.0, 20.0));
     /// ```
     pub fn render_id(&mut self, figure_id: u64, location: Point2D) {
         // If there is already a definition
@@ -491,11 +515,11 @@ impl Renderer {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
     ///
     /// // Generate circle
@@ -530,11 +554,11 @@ impl Renderer {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
     ///
     /// // Generate circle
@@ -562,19 +586,16 @@ impl Renderer {
     /// Basically reinits the renderer.
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
-    ///
-    /// // Generate circle
-    /// let circle = SVGDefault::circle(10);
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", circle, (10.0, 10.0));
+    /// renderer.render_named("named_circle", SVGDefault::circle(10), (10.0, 10.0));
     ///
     /// // --snip
     ///
@@ -584,12 +605,17 @@ impl Renderer {
     /// // Renders the circle with "named_circle" name again.
     /// // This would normally panic, since a name is redeclared,
     /// // but since the renderer is cleared, it will not. :)
-    /// renderer.render_named("named_circle", circle, (20.0, 20.0));
+    /// renderer.render_named("named_circle", SVGDefault::circle(10), (20.0, 20.0));
     /// ```
     pub fn clear(&mut self) {
         self.get_svg_root()
             .expect("Can't find SVG Root")
             .set_inner_html("");
+
+        self.get_svg_root()
+            .expect("Can't find SVG Root (2)")
+            .append_child(&crate::to_html(&SVGElem::new(Tag::Defs)))
+            .expect("Failed to append defs!");
 
         self.figure_defs = BTreeSet::new();
         self.name_defs = HashMap::new();
@@ -610,22 +636,19 @@ impl Renderer {
     /// Also have a look at [hide_named](#method.hide_named) and [move_named](#method.move_named)
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
-    ///
-    /// // Generate circle
-    /// let circle = SVGDefault::circle(10);
     ///
     /// // Adds the named container 'named_container' to the svg root
     /// renderer.create_named_container("named_container", "root");
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", circle, (10.0, 10.0));
+    /// renderer.append_to_container("named_container", SVGDefault::circle(10), (10.0, 10.0));
     ///
     /// // Now the container contains the circle figure
     ///
@@ -639,7 +662,7 @@ impl Renderer {
     /// // Render circle in the named_container.
     /// // Since definitions were not cleared, it will use a previous definition.
     /// // This saves some processing time in this case.
-    /// renderer.append_to_container("named_container", circle, (20.0, 20.0));
+    /// renderer.append_to_container("named_container", SVGDefault::circle(10), (20.0, 20.0));
     ///
     /// // Now the container contains the circle at a different position
     /// ```
@@ -657,29 +680,26 @@ impl Renderer {
     /// * `location` - the location where to add the `figure`
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
-    ///
-    /// // Generate circle
-    /// let circle = SVGDefault::circle(10);
     ///
     /// // Adds the named container 'named_container' to the svg root
     /// renderer.create_named_container("named_container", "root");
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container("named_container", circle, (10.0, 10.0));
+    /// renderer.append_to_container("named_container", SVGDefault::circle(10), (10.0, 10.0));
     ///
     /// // Now the container contains the circle figure
     ///
     /// // --snip
     ///
     /// // Update the contents of the named container
-    /// renderer.update_named("named_container", circle, (20.0, 20.0));
+    /// renderer.update_named("named_container", SVGDefault::circle(10), (20.0, 20.0));
     ///
     /// // Now the container contains the circle at a different position
     /// ```
@@ -719,23 +739,20 @@ impl Renderer {
     /// * `location` - the location where to add the `figure`
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
-    ///
-    /// // Generate circle
-    /// let circle = SVGDefault::circle(10);
     ///
     /// // Adds the named container 'named_container' to the svg root
     /// renderer.create_named_container("named_container", "root");
     ///
-    /// let circle_id = renderer.define_render(circle);
+    /// let circle_id = renderer.define_render(SVGDefault::circle(10));
     ///
     /// // Render circle
-    /// renderer.append_to_container("named_container", circle, (10.0, 10.0));
+    /// renderer.append_to_container("named_container", SVGDefault::circle(10), (10.0, 10.0));
     ///
     /// // Now the container contains the circle figure
     ///
@@ -774,11 +791,11 @@ impl Renderer {
     /// * `name` - Name of item to hide
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
     ///
     /// // Generate circle
@@ -794,8 +811,8 @@ impl Renderer {
     /// renderer.hide_named("named_circle");
     /// ```
     pub fn hide_named(&self, name: &str) {
-        self.get_named_container(name)
-            .expect("Failed to fetch named container!")
+        self.get_named_item(name)
+            .expect("Failed to fetch named item!")
             .set_attribute("style", "display: none;")
             .expect("Failed to set attribute of container!");
     }
@@ -806,11 +823,11 @@ impl Renderer {
     /// * `name` - Name of item to show
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
     ///
     /// // Generate circle
@@ -818,7 +835,7 @@ impl Renderer {
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", circle, new(10.0, 10.0));
+    /// renderer.render_named("named_circle", circle, (10.0, 10.0));
     ///
     /// // Hides the named figure
     /// renderer.hide_named("named_circle");
@@ -829,8 +846,8 @@ impl Renderer {
     /// renderer.show_named("named_circle");
     /// ```
     pub fn show_named(&self, name: &str) {
-        self.get_named_container(name)
-            .expect("Failed to fetch named container!")
+        self.get_named_item(name)
+            .expect("Failed to fetch named item!")
             .remove_attribute("style")
             .expect("Failed to set attribute of container!");
     }
@@ -846,11 +863,11 @@ impl Renderer {
     /// Will panic when a name passed in is in use by a pure figure.
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
     ///
     /// // Generate circle
@@ -891,24 +908,21 @@ impl Renderer {
     /// Will panic when a name passed in is in use by a pure figure.
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
-    ///
-    /// // Generate circle
-    /// let circle = SVGDefault::circle(10);
     ///
     /// // Adds the named container 'named_container' to the svg root
     /// renderer.create_named_container("named_container", "root");
     ///
-    /// let circle_id = renderer.define_render(circle);
+    /// let circle_id = renderer.define_render(SVGDefault::circle(10));
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.append_to_container_with_id("named_container", circle, (10.0, 10.0));
+    /// renderer.append_to_container_with_id("named_container", circle_id, (10.0, 10.0));
     ///
     /// // Now the container contains the circle figure
     /// ```
@@ -929,19 +943,16 @@ impl Renderer {
     /// * `name` - Name of item to delete
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
-    ///
-    /// // Generate circle
-    /// let circle = SVGDefault::circle(10);
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", circle, (10.0, 10.0));
+    /// renderer.render_named("named_circle", SVGDefault::circle(10), (10.0, 10.0));
     ///
     /// // --snip
     ///
@@ -951,7 +962,7 @@ impl Renderer {
     /// // Renders the circle with "named_circle" name again.
     /// // This would normally panic, since a name is redeclared,
     /// // but since the named figure is deleted, it will not. :)
-    /// renderer.render_named("named_circle", circle, (20.0, 20.0));
+    /// renderer.render_named("named_circle", SVGDefault::circle(10), (20.0, 20.0));
     /// ```
     pub fn delete_named(&mut self, name: &str) {
         let container = self.get_named_container(name);
@@ -983,22 +994,19 @@ impl Renderer {
     /// * 'name' - Name to check
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
-    ///
-    /// // Generate circle
-    /// let circle = SVGDefault::circle(10);
     ///
     /// // Will be set to false
     /// let does_named_circle_exist = renderer.does_name_exist("named_circle");
     ///
     /// // Render circle (since it's the first time of rendering this shape,
     /// // the renderer will add the shape's definition)
-    /// renderer.render_named("named_circle", circle, (10.0, 10.0));
+    /// renderer.render_named("named_circle", SVGDefault::circle(10), (10.0, 10.0));
     ///
     /// // Will be set to true
     /// let does_named_circle_exist = renderer.does_name_exist("named_circle");
@@ -1012,7 +1020,7 @@ impl Renderer {
     /// // Renders the circle with "named_circle" name again.
     /// // This would normally panic, since a name is redeclared,
     /// // but since the named figure is deleted, it will not. :)
-    /// renderer.render_named("named_circle", circle, (20.0, 20.0));
+    /// renderer.render_named("named_circle", SVGDefault::circle(10), (20.0, 20.0));
     ///
     /// // Will be set to true
     /// let does_named_circle_exist = renderer.does_name_exist("named_circle");
@@ -1028,11 +1036,11 @@ impl Renderer {
     /// * `parent` - Name a container, which to use as parent ("root" is used for the SVG root)
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
     ///
     /// // Generate circle
@@ -1071,11 +1079,11 @@ impl Renderer {
     /// * `loc` - Location to move the figure to
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
     ///
     /// // Generate circle
@@ -1088,7 +1096,8 @@ impl Renderer {
     /// // --snip
     ///
     /// // Moves the named figure to a new location
-    /// renderer.move_named("named_circle", Point2D::new(5, 5));
+    /// renderer.move_named("named_circle", (5.0, 5.0));
+    /// ```
     pub fn move_named(&mut self, name: &str, loc: Point2D) {
         if !self.does_name_exist(name) {
             panic!("Failed to move named figure: Name doesn't exist!");
@@ -1120,11 +1129,11 @@ impl Renderer {
     /// Will output false if the name is not in use
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
     /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// let mut renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
     ///
     /// // Generate circle
@@ -1157,11 +1166,11 @@ impl Renderer {
     /// By default this is set to [DEFAULT_VIEWBOX](constant.DEFAULT_VIEWBOX.html).
     ///
     /// # Examples
-    /// ```
+    /// ```rust,no_run
     /// use wasm_svg_graphics::prelude::*;
     ///
-    /// // Declare renderer (must be mutable)
-    /// let mut renderer = Renderer::new("svg_parent_id")
+    /// // Declare renderer
+    /// let renderer = SVGRenderer::new("svg_parent_id")
     ///     .expect("Failed to create renderer!");
     ///
     /// // Adjust the viewbox
