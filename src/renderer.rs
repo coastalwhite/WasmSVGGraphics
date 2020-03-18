@@ -139,12 +139,9 @@ impl Renderer {
     ) -> Result<web_sys::Element, RendererError> {
         Ok(crate::to_html(
             &SVGElem::new(Tag::Use)
-                .set(Attr::PositionX, location.0.into())
-                .set(Attr::PositionY, location.1.into())
-                .set(
-                    Attr::Reference,
-                    AttrValue::new_reference(def_id).expect("Invalid href id"),
-                ),
+                .set(Attr::X, location.0)
+                .set(Attr::X, location.1)
+                .set(Attr::Href, format!("#{}", def_id)),
         ))
     }
 
@@ -365,16 +362,13 @@ impl Renderer {
             .get_element_by_id(dom_root_id)
             .ok_or(Dom(UnfindableId(String::from(dom_root_id))))?;
 
-        let svg_element = SVGElem::new(Tag::SVG)
+        let svg_element = SVGElem::new(Tag::Svg)
             .set(
                 Attr::ViewBox,
-                (
-                    DEFAULT_VIEWBOX[0],
-                    DEFAULT_VIEWBOX[1],
-                    DEFAULT_VIEWBOX[2],
-                    DEFAULT_VIEWBOX[3],
-                )
-                    .into(),
+                format!(
+                    "{} {} {} {}",
+                    DEFAULT_VIEWBOX[0], DEFAULT_VIEWBOX[1], DEFAULT_VIEWBOX[2], DEFAULT_VIEWBOX[3],
+                ),
             )
             .append(SVGElem::new(Tag::Defs));
 

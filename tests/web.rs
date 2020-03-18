@@ -61,7 +61,7 @@ fn lib_simple_smiley() {
     // Declare renderer (must be mutable) into a parent container
     let mut renderer = SVGRenderer::new("svg_parent_id").expect("Failed to create renderer!");
 
-    let smiley = SVGElem::new(Tag::Group)
+    let smiley = SVGElem::new(Tag::G)
         .append(SVGDefault::circle(20))
         .append(SVGDefault::set_circle_loc(SVGDefault::circle(3), -7, -7))
         .append(SVGDefault::set_circle_loc(SVGDefault::circle(3), 7, -7))
@@ -79,20 +79,16 @@ fn lib_simple_colored_smiley() {
     // Declare renderer (must be mutable) into a parent container
     let mut renderer = SVGRenderer::new("svg_parent_id").expect("Failed to create renderer!");
 
-    let colored_smiley = SVGElem::new(Tag::Group)
-        .append(SVGDefault::circle(20).set(Attr::StrokeColor, RGB::new(255, 255, 0).into()))
+    let colored_smiley = SVGElem::new(Tag::G)
+        .append(SVGDefault::circle(20).set(Attr::Stroke, "#ffff00"))
         .append(
-            SVGDefault::set_circle_loc(SVGDefault::circle(3), -7, -7)
-                .set(Attr::FillColor, RGB::new(0, 0, 0).into()),
+            SVGDefault::set_circle_loc(SVGDefault::circle(3), -7, -7).set(Attr::Fill, "#000000"),
         )
-        .append(
-            SVGDefault::set_circle_loc(SVGDefault::circle(3), 7, -7)
-                .set(Attr::FillColor, RGB::new(0, 0, 0).into()),
-        )
+        .append(SVGDefault::set_circle_loc(SVGDefault::circle(3), 7, -7).set(Attr::Fill, "#000000"))
         .append(
             SVGDefault::curve(-7, 5, 7, 5, -4, 10, 4, 10)
-                .set(Attr::StrokeColor, RGB::new(255, 0, 0).into())
-                .set(Attr::FillColor, RGBT::Transparent.into()),
+                .set(Attr::Stroke, "#ff0000")
+                .set(Attr::Fill, "transparent"),
         );
 
     renderer.render(colored_smiley, (25.0, 25.0));
