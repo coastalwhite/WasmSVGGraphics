@@ -382,6 +382,44 @@ impl Renderer {
         })
     }
 
+    /// Creates renderer object from svg element
+    ///
+    /// # Note
+    /// * This function will panic if the root of the `svg_elem` is not a TagName::Svg
+    ///
+    /// # Arguments
+    /// * `dom_root_id` - The HTMl Attribute ID of the parent element of to be created SVG
+    /// * `svg_elem` - The svg element to from the renderer from
+    pub fn new_from_svg(dom_root_id: &str, svg_elem: SVGElem) -> Result<Renderer, RendererError> {
+        let document = crate::get_document()?;
+
+        let root = document
+            .get_element_by_id(dom_root_id)
+            .ok_or(Dom(UnfindableId(String::from(dom_root_id))))?;
+
+        if *svg_elem.get_tag_name() != Tag::Svg {
+            panic!("Head is not a Svg Element");
+        }
+
+        let mut svg_element = SVGElem::new(Tag::Svg).append(SVGElem::new(Tag::Defs));
+        for (attr, value) in svg_elem.get_attributes().iter() {
+            svg_element = svg_element.set(attr.clone(), value);
+        }
+
+        for child in svg_elem.get_children().iter() {
+            svg_element = svg_element.append(child.clone());
+        }
+
+        root.append_child(&crate::to_html(&svg_element))
+            .map_err(|_| Dom(UnappendableElement))?;
+
+        Ok(Renderer {
+            dom_root_id: String::from(dom_root_id),
+            figure_defs: BTreeSet::new(),
+            name_defs: HashMap::new(),
+        })
+    }
+
     /// Render figure at a location (this will automatically add a definition when needed)
     ///
     /// # Arguments
