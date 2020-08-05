@@ -140,7 +140,7 @@ impl Renderer {
         Ok(crate::to_html(
             &SVGElem::new(Tag::Use)
                 .set(Attr::X, location.0)
-                .set(Attr::X, location.1)
+                .set(Attr::Y, location.1)
                 .set(Attr::Href, format!("#{}", def_id)),
         ))
     }

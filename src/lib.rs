@@ -119,5 +119,9 @@ fn to_html(svg_elem: &SVGElem) -> web_sys::Element {
             .expect("Failed to append child");
     });
 
+    if let Some(inner_html) = svg_elem.get_inner() {
+        elem.set_inner_html(inner_html);
+    }
+
     elem
 }
