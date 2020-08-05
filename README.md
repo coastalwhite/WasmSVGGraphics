@@ -12,6 +12,10 @@ It is able to:
 
 # Changelog
 
+## 1.0.3
+
+-   Small bug fixes
+
 ## 1.0.2
 
 -   Added support for _svg_definitions 0.3.0_, which introduces a feature to parse files and pure strings into svg elements.
