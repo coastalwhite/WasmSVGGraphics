@@ -5,7 +5,7 @@ use svg_definitions::prelude::*;
 /// Creates a default circle with a certain radius
 pub fn circle(radius: i32) -> SVGElem {
     SVGElem::new(Tag::Circle)
-        .set(Attr::Radius, radius)
+        .set(Attr::R, radius)
         .set(Attr::Stroke, "#000000")
         .set(Attr::StrokeWidth, 1)
         .set(Attr::Fill, "transparent")
