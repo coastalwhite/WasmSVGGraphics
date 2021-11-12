@@ -10,21 +10,6 @@ It is able to:
 -   Automatically detect if two shapes are the same, so only a single SVG _\<def\>_ will get added to the DOM
 -   Declare named items/containers for later adjustments, such as hiding, reshowing and repositioning
 
-# Changelog
-
-## 1.0.3
-
--   Small bug fixes
-
-## 1.0.2
-
--   Added support for _svg_definitions 0.3.0_, which introduces a feature to parse files and pure strings into svg elements.
--   Added `new_from_svg`, which lets you create a svg from SVGElem.
-
-## 1.0.1
-
--   Added support for _svg_definitions 0.2.0_, which introduces more svg elements and attributes.
-
 # Note
 
 Version 1.0.1 is tested to be stable, and can be used in development.
