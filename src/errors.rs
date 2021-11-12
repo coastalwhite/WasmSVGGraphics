@@ -60,10 +60,10 @@ impl fmt::Display for DomError {
             UnfindableId(arg0) |
             UnfindableTag(arg0) |
             IdAlreadyExists(arg0)
-                => write!(f, "Error '{}' with argument '{}'", self.description(), arg0),
+                => write!(f, "Error '{}' with argument '{}'", self, arg0),
             UnsetableAttribute(arg0, arg1)
-                => write!(f, "Error '{}' with arguments '{}' and '{}'", self.description(), arg0, arg1),
-            _ => write!(f, "Error: {}", self.description())
+                => write!(f, "Error '{}' with arguments '{}' and '{}'", self, arg0, arg1),
+            _ => write!(f, "Error: {}", self)
         }
     }
 }
@@ -78,18 +78,6 @@ pub enum RendererError {
 }
 
 impl error::Error for RendererError {
-    fn description(&self) -> &str {
-        use RendererError::*;
-
-        match self {
-            UnfindableName(_) => "The name is unable to be found",
-            NameAlreadyExists(_) => "The name is already being used",
-            NamedNotContainer(_) => "The name is not being used for a container",
-            NamedNotUse(_) => "The name is not being used for a use element",
-            Dom(dom_error) => dom_error.description(),
-        }
-    }
-
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         None
     }
@@ -99,13 +87,21 @@ impl fmt::Display for RendererError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use RendererError::*;
 
+        let description = match self {
+            UnfindableName(_) => "The name is unable to be found".to_string(),
+            NameAlreadyExists(_) => "The name is already being used".to_string(),
+            NamedNotContainer(_) => "The name is not being used for a container".to_string(),
+            NamedNotUse(_) => "The name is not being used for a use element".to_string(),
+            Dom(dom_error) => dom_error.to_string(),
+        };
+
         match self {
             Dom(dom_error) => write!(f, "{}", dom_error),
             UnfindableName(arg0) |
             NameAlreadyExists(arg0) |
             NamedNotContainer(arg0) |
             NamedNotUse(arg0)
-            => write!(f, "Error '{}' with argument '{}'", self.description(), arg0),
+            => write!(f, "Error '{}' with argument '{}'", description, arg0),
         }
     }
 }
